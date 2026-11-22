@@ -238,7 +238,7 @@ h2{font-size:1.15rem;margin:18px 0 8px}
 <header class="top"><div class="wrap">
   <div class="top-row">
     <div class="who"><span id="hero-px"></span><div style="min-width:0"><h1 id="fam">Lignée</h1><div class="sub" id="gen"></div></div></div>
-    <div class="res"><span title="Or">🪙 <b id="gold">0</b></span><span title="Potions">🧪 <b id="pots">0</b></span><span title="Jour">☀️ <b id="day">1</b></span></div>
+    <div class="res"><span title="Or">🪙 <b id="gold">0</b></span><span title="Potions">🧪 <b id="pots">0</b></span><span title="Jour"><span id="sic">☀️</span> <b id="day">1</b></span></div>
   </div>
 </div></header>
 
@@ -789,7 +789,17 @@ const BOND=[0,8,20,40];
 const bondLvl=c=>BOND.filter(t=>(c.bond||0)>=t).length-1;
 const bondName=c=>[["Compagnon","Compagne"],["Ami","Amie"],["Frère d’armes","Sœur d’armes"],["Inséparable","Inséparable"]][bondLvl(c)][c.g==="f"?1:0];
 const comps=()=>Object.values(G.chars).filter(c=>c.kind==="comp");
-const CONTRACT=10;
+const CONTRACT=20;
+const MERC_PERKS={
+  eclaireur:{n:["Éclaireur","Éclaireuse"],d:"Moins d’incidents sur la route (−30 %).",fl:["connaît chaque sentier de la vallée","sent une embuscade à cent pas"]},
+  pillard:{n:["Ancien pillard","Ancienne pillarde"],d:"+15 % d’or après chaque combat.",fl:["a rendu ses armes à Grukk… enfin, presque toutes","sait toujours où chercher les bourses"]},
+  herboriste:{n:["Herboriste","Herboriste"],d:"Soigne le groupe de 10 % après chaque victoire.",fl:["porte un sac d’herbes qui sent la menthe","panse les plaies en chantonnant"]},
+  garde:{n:["Garde du corps","Garde du corps"],d:"Attire les coups au premier tour de chaque combat.",fl:["a protégé un baron pendant dix ans","se jette devant toi sans réfléchir"]},
+  alchimiste:{n:["Alchimiste","Alchimiste"],d:"Prépare une potion tous les 5 jours.",fl:["fait bouillir des choses étranges le soir","a les doigts tachés de vert"]},
+  conteur:{n:["Conteur","Conteuse"],d:"+10 % d’expérience pour le groupe.",fl:["connaît mille histoires de batailles","tire une leçon de chaque combat"]}};
+const EP_M=["le Borgne","Deux-Doigts","le Taciturne","Belle-Lame","le Rouquin","Pied-Léger","le Vieux","Main-de-Fer"],EP_F=["la Balafrée","Deux-Doigts","la Taciturne","Belle-Lame","la Rousse","Pied-Léger","la Vieille","Main-de-Fer"];
+const perkName=c=>MERC_PERKS[c.perk].n[c.g==="f"?1:0];
+const hasPerk=p=>partyChars().some(c=>c.perk===p&&c.kind==="merc");
 function joinCompanion(key){
   const D=COMPS[key];if(!D||Object.values(G.chars).some(c=>c.key===key))return null;
   const c=newChar(D.n,D.cls,"comp",Math.max(D.lvl,hero().lvl-1));c.key=key;c.g=D.g;c.swap=D.swap;c.wT=D.wT||0;c.aT=D.aT||0;c.traits=D.traits.slice();c.bond=0;c.hp=charStats(c).hp;
@@ -868,7 +878,7 @@ const SOUL_SWAP={body:"#bff0dc",eye:"#ffffff"};
 function save(){try{localStorage.setItem(SAVE,JSON.stringify(G));}catch(e){}}
 function load(){
   try{let r=localStorage.getItem(SAVE)||localStorage.getItem(OLD_SAVE);if(!r)return null;const g=JSON.parse(r);
-    g.quests=g.quests||{};g.champs=g.champs||{};g.tourney=g.tourney||{};g.choices=g.choices||{};g.deeds=g.deeds||[];g.relics=g.relics||[];g.prayed=g.prayed||{};g.worldSnap=g.worldSnap||{by:{}};g.variants=g.variants||{};g.pending=g.pending||[];g.partner=g.partner||null;if(g.partner&&!g.partner.g)g.partner.g=genderOf(g.partner.name);for(const c of Object.values(g.chars||{})){c.traits=c.traits||[];if(!c.g)c.g=genderOf(c.name);if(c.unique&&c.kind==="merc"){c.kind="comp";c.key="gauthier";c.bond=c.bond||0;}if(c.kind==="merc"&&!c.until)c.until=(g.day||1)+CONTRACT;if(c.age===undefined&&c.kind!=="merc"&&c.kind!=="comp"&&c.cls)c.age=c.kind==="hero"?25:17;}
+    g.quests=g.quests||{};g.news=g.news||[];g.mods=g.mods||{};g.fest=g.fest||{};g.visits=g.visits||{};g.champs=g.champs||{};g.tourney=g.tourney||{};g.choices=g.choices||{};g.deeds=g.deeds||[];g.relics=g.relics||[];g.prayed=g.prayed||{};g.worldSnap=g.worldSnap||{by:{}};g.variants=g.variants||{};g.pending=g.pending||[];g.partner=g.partner||null;if(g.partner&&!g.partner.g)g.partner.g=genderOf(g.partner.name);for(const c of Object.values(g.chars||{})){c.traits=c.traits||[];if(!c.g)c.g=genderOf(c.name);if(c.unique&&c.kind==="merc"){c.kind="comp";c.key="gauthier";c.bond=c.bond||0;}if(c.kind==="merc"&&!c.until)c.until=(g.day||1)+CONTRACT;if(c.age===undefined&&c.kind!=="merc"&&c.kind!=="comp"&&c.cls)c.age=c.kind==="hero"?25:17;}
     if(g.honor===undefined){g.honor=(g.family&&g.family.blason||0)*10;}
     if(g.nemesis&&!g.nemesis.sp)g.nemesis.sp=g.nemesis.boss?BOSSES[g.nemesis.boss].sp:(EN[g.nemesis.tpl]||EN.loup).sp;
     return g;}catch(e){return null;}
@@ -897,7 +907,7 @@ function inheritTraits(a,b){
   if(out.length<2&&Math.random()<.35){const r=pick(Object.keys(TRAITS).filter(k=>!TRAITS[k].rare&&!out.includes(k)));out.push(r);}
   if(!out.length)out.push(pick(GOOD_TRAITS));return out;
 }
-const goldMul=()=>(bld("marche")>=2?1.1:1)*Math.max(1,...partyChars().map(c=>trM(c,"gold")));
+const goldMul=()=>(bld("marche")>=2?1.1:1)*Math.max(1,...partyChars().map(c=>trM(c,"gold")))*(hasPerk("pillard")?1.15:1)*(seasonIdx()===2?1.2:1);
 function charStats(c){
   const C=CLASSES[c.cls],L=c.lvl;
   const b=!isFam(c)?1+(c.kind==="comp"?.05*bondLvl(c):0):1+.05*rank(),rb=!isFam(c)?1:1+.05*(G&&G.relics?G.relics.length:0),am=ageMul(c)*(c.voc&&c.voc===c.cls?1.1:1);
@@ -908,9 +918,9 @@ const partyChars=()=>[hero(),...G.party.map(id=>G.chars[id]).filter(Boolean)];
 const kids=()=>Object.values(G.chars).filter(c=>c.kind==="child");
 const mercs=()=>Object.values(G.chars).filter(c=>c.kind==="merc");
 const xpNeed=l=>Math.round(30*Math.pow(l,1.6));
-const potionPrice=()=>Math.round((8+2*hero().lvl)*(bld("marche")?.7:1));
-const restPrice=()=>bld("temple")?0:2*hero().lvl;
-const mercPrice=l=>Math.round((20+15*l)*(hasT(hero(),"charisme")?.8:1));
+const potionPrice=()=>Math.round((8+2*hero().lvl)*(bld("marche")?.7:1)*(modOn("caravane")?.6:1));
+const restPrice=()=>bld("temple")?0:2*hero().lvl*(modOn("fievre")?2:1);
+const mercPrice=l=>Math.round((20+15*l)*(hasT(hero(),"charisme")?.8:1)*(G&&G.rival&&G.rival.allied?.8:1));
 const trainPrice=c=>Math.round(12*Math.pow(c.lvl,1.6)*(hasElder()?.5:1)*(bld("salle")?.7:1)*(hasT(hero(),"charisme")?.8:1));
 const maxTier=()=>Math.min(4,G.ch+1+(bld("forge")>=2?1:0));
 const fcost=t=>Math.round(t.cost*(bld("forge")?.8:1));
@@ -1030,6 +1040,78 @@ function rumors(){
   const [id,t]=pick(pool);G.told[id]=true;save();return[t];
 }
 
+/* ---------- Monde vivant ---------- */
+const SEASON_LEN=8;
+const SEASONS=[
+  {n:"Printemps",le:"Le printemps",ic:"🌸",d:"les naissances sont plus fréquentes",fest:{n:"Fête des Semailles",a:"la Fête des Semailles",ic:"🌱",t:"Le village sème le grain nouveau. On danse sur la place jusqu’à la nuit tombée."}},
+  {n:"Été",le:"L’été",ic:"☀️",d:"les routes sont plus sûres",fest:{n:"Joutes du Solstice",a:"les Joutes du Solstice",ic:"🎯",t:"Des jouteurs venus de toute la vallée s’affrontent sur la place, sous les bannières."}},
+  {n:"Automne",le:"L’automne",ic:"🍂",d:"les combats rapportent plus d’or",fest:{n:"Banquet des Moissons",a:"le Banquet des Moissons",ic:"🍗",t:"Les greniers débordent. Tout Valbrume se retrouve autour d’une immense tablée."}},
+  {n:"Hiver",le:"L’hiver",ic:"❄️",d:"les routes sont dangereuses, mais chaque combat apprend davantage",fest:{n:"Veillée des Ancêtres",a:"la Veillée des Ancêtres",ic:"🕯️",t:"Chacun allume une bougie pour ses morts. Les anciens racontent les histoires d’avant."}}];
+const seasonIdx=()=>G?Math.floor(((G.day||1)-1)/SEASON_LEN)%4:0;
+const season=()=>SEASONS[seasonIdx()];
+const dayInSeason=()=>((G.day-1)%SEASON_LEN)+1;
+const festKey=()=>Math.floor((G.day-1)/SEASON_LEN);
+const isFest=()=>dayInSeason()>=4&&dayInSeason()<=5;
+const modOn=k=>!!(G&&G.mods&&G.mods[k]&&G.mods[k]>=G.day);
+const infestAt=k=>!!(G&&G.mods&&G.mods.infest&&G.mods.infest.loc===k&&G.mods.infest.until>=G.day);
+function news(t){G.news=G.news||[];G.news.unshift({d:G.day,t});G.news.length=Math.min(G.news.length,8);}
+const CORB_SWAP={body:"#2a2230",armor:"#4a4458",plume:"#7a3aa0",cape:"#3a1a4a",headColor:"#4a4458",shieldColor:"#4a2a5a"};
+function rival(){if(!CHR.rival){CHR.rival={gen:1,heir:"Ysmaël",g:"m"};saveChr();}if(!G.rival)G.rival={honor:Math.min(25,3+4*CHR.lineages.length),beaten:0,met:false,allied:false,challenge:0};return G.rival;}
+const RIVAL_BRAGS=["{n} a remporté trois duels à l’arène et s’en vante dans toute la taverne.","Les Corbeval ont offert une cloche neuve au temple : le village les acclame.","{n} raconte à qui veut l’entendre que ta lignée ne finira jamais rien.","Les Corbeval ont escorté une caravane jusqu’au marais sans perdre un seul chariot.","On dit que {n} s’entraîne chaque nuit, à la lueur des torches."];
+function rivalNews(){
+  const r=rival();if(r.allied)return null;const R=CHR.rival,nm=`${R.heir} Corbeval`,il=R.g==="f"?"Elle":"Il";
+  if(!r.met){r.met=true;r.honor++;return `Les Corbeval, l’autre grande famille de Valbrume, font beaucoup parler d’eux. ${nm} jure que sa lignée fera mieux que la tienne.`;}
+  if(!r.challenge&&Math.random()<.45){r.challenge=G.day+6;return `${nm} te défie en duel à l’arène de Valbrume. ${il} t’y attendra jusqu’au jour ${r.challenge}.`;}
+  r.honor+=ri(1,3);return pick(RIVAL_BRAGS).replace("{n}",nm);
+}
+const WORLD_EVENTS=[
+  {w:2,f:()=>{G.mods.caravane=G.day+4;return "Une caravane de marchands s’est installée à Valbrume : les potions coûtent bien moins cher pendant quelques jours.";}},
+  {w:1,f:()=>{G.mods.fievre=G.day+4;return "Une fièvre court au village : l’auberge, débordée, double ses prix pendant quelques jours.";}},
+  {w:1.5,f:()=>{if(bld("palissade")){addHonor(1);return "Des pillards ont tenté un coup de main sur Valbrume, mais la palissade a tenu. Le village te remercie : +1 honneur.";}
+    if(G.loc==="village")return "Des pillards rôdaient autour du village, mais ta présence les a fait fuir.";
+    const v=Math.floor(G.gold*.15);G.gold-=v;return `Pendant ton absence, des pillards ont dévalisé ta maison : ${v} pièces volées. Une palissade les aurait arrêtés.`;}},
+  {w:2,f:()=>{const ok=Object.keys(LOCS).filter(k=>!LOCS[k].safe&&isUnlocked(k)&&G.visited[k]);if(!ok.length)return null;const k=pick(ok);G.mods.infest={loc:k,until:G.day+5};return `Les bêtes s’agitent ${LOC_IN[k]||"vers "+LOCS[k].n} : les combats y rapportent une fois et demie plus pendant quelques jours.`;}},
+  {w:2.5,f:()=>G.ch>=1||G.day>12?rivalNews():null},
+  {w:1,f:()=>{const lg=CHR.legends.filter(l=>!l.slain);if(!lg.length)return null;const l=pick(lg),ok=Object.keys(LOCS_BASE).filter(k=>!LOCS_BASE[k].safe&&k!==l.loc&&LOC_IN[k]&&!["camp","crypte","pic"].includes(k));const nk=pick(ok);l.loc=nk;saveChr();return `${l.n} a quitté son territoire : on l’a vu rôder ${LOC_IN[nk]}.`;}}];
+function worldEvent(){
+  for(let t=0;t<4;t++){const tot=WORLD_EVENTS.reduce((a,e)=>a+e.w,0);let r=Math.random()*tot,ev=WORLD_EVENTS[0];for(const e of WORLD_EVENTS){if((r-=e.w)<0){ev=e;break;}}
+    const t2=ev.f();if(t2){G.lastWorld=G.day;news(t2);toast("📰 "+t2);return;}}
+}
+const FRAGS={
+  champs:{t:"La borne effacée",d:"Sous les blés, une borne couverte de mousse : « Ici commence le royaume d’Aldor, qui s’étend jusqu’à la mer. » La mer est à vingt jours de marche."},
+  bois:{t:"L’arbre aux noms",d:"Un chêne immense porte des centaines de noms gravés dans une écriture oubliée. Chacun est suivi d’un même mot, que l’Ancien traduira plus tard : « gardien »."},
+  camp:{t:"Le coffre des pillards",d:"Sous la tente de Grukk, un coffre aux armes d’Aldor. Les pillards ignoraient ce qu’ils gardaient : des lettres d’un roi qui supplie ses mages d’arrêter « l’expérience du feu »."},
+  marais:{t:"La tour engloutie",d:"Quand l’eau baisse, le sommet d’une tour émerge de la vase. Une inscription : « Nous avons voulu dompter le feu du ciel. Le ciel nous a répondu. »"},
+  ruines:{t:"Le trône brisé",d:"Un trône fendu en deux. Sur l’accoudoir, une main pressée a gravé : « Le dragon n’est pas notre ennemi. C’est notre enfant. »"},
+  crypte:{t:"Le tombeau vide",d:"Le sarcophage du dernier roi d’Aldor est vide. Une plaque : « Il est parti réparer sa faute. Il reviendra quand la vallée en aura besoin. »"},
+  mines:{t:"La forge des runes",d:"Une forge où se mêlent runes naines et aldoriennes : les deux peuples travaillaient ensemble. Sur l’enclume repose une coquille de pierre, brisée de l’intérieur."},
+  pic:{t:"Le dernier message",d:"Au sommet, gravé dans la roche fondue : « Mon fils, pardonne-nous. » La signature est celle du dernier roi d’Aldor."}};
+const fragCount=()=>Object.keys(CHR.fragments||{}).length;
+async function revealFrag(k,intro){
+  CHR.fragments=CHR.fragments||{};if(CHR.fragments[k]||!FRAGS[k])return false;CHR.fragments[k]={by:G.family.name};saveChr();
+  const F=FRAGS[k],n=fragCount();mem(hero(),`Découvre « ${F.t} », un secret des Aldor.`);save();
+  await story(`📜 ${F.t}`,[intro,F.d,`Fragment ${n} sur ${Object.keys(FRAGS).length} des secrets d’Aldor. Les fragments restent dans les chroniques, d’une lignée à l’autre.`]);
+  if(n>=Object.keys(FRAGS).length&&!CHR.aldorDone){CHR.aldorDone=G.family.name;saveChr();G.relics.push({n:"le Sceau d’Aldor",from:"Aldor"});addHonor(5);deed("Secret des Aldor percé à jour");save();
+    await story("Le secret des Aldor",["Les huit fragments racontent une seule histoire. Les rois d’Aldor ont voulu dompter le feu du ciel, et de leur orgueil est né un dragon. Leur dernier roi est parti réparer sa faute.","Ignarath n’est pas une simple bête : c’est l’héritier d’un royaume disparu.","Dans les ruines, une cache s’ouvre d’elle-même : le Sceau d’Aldor. Toute ta famille frappe 5 % plus fort, et la vallée entière parle de ta lignée (+5 honneur)."]);}
+  renderAll();return true;
+}
+async function fest(){
+  if(!isFest()||G.fest[festKey()])return;const s=seasonIdx(),F=SEASONS[s].fest,L=hero().lvl;
+  const opts=[[{l:"💃 Danser avec ta famille<br><small>Soins complets, les enfants grandissent</small>",v:0},{l:`🌾 Aider aux semailles<br><small>+${12*L} 🪙 · +1 honneur</small>`,v:1}],
+    [{l:"⚔️ Entrer dans la lice<br><small>Un duel sans danger · or et honneur</small>",v:0},{l:"🍻 Profiter de la fête<br><small>Soins complets · +1 potion</small>",v:1}],
+    [{l:"🍗 Festoyer<br><small>Soins complets · +3 potions</small>",v:0},{l:"🤲 Offrir ta part aux plus pauvres<br><small>+2 honneur</small>",v:1}],
+    [{l:"🕯️ Honorer les tombes<br><small>Honneur selon les lignées passées</small>",v:0},{l:"👂 Écouter les anciens<br><small>Peut-être un secret oublié…</small>",v:1}]][s];
+  const v=await modal(`<h3>${F.ic} ${F.n}</h3><p>${F.t}</p>`,opts.concat([{l:"Plus tard",v:null}]),{dismiss:false});
+  if(v===null||v===undefined)return;G.fest[festKey()]=true;mem(hero(),`Célèbre ${F.a}.`);const out=[];
+  if(s===0){if(v===0){healParty(1);for(const k of kids())if(!k.cls)growKid(k,10,true);out.push("La fatigue s’envole et les enfants rient aux éclats.");}else{G.gold+=12*L;addHonor(1);out.push(`Les paysans te glissent ${12*L} pièces et ne tarissent pas d’éloges.`);}}
+  if(s===1){if(v===0){save();renderAll();const en=foes(["gladiateur"],1,{n:"Jouteur du Solstice",r:2},.6),sn={};for(const c of partyChars())sn[c.id]=c.hp;await startCombat(en,{type:"arena",bg:ARENA_BG,honor:2});for(const c of partyChars())if(sn[c.id]!==undefined)c.hp=Math.max(sn[c.id],Math.min(c.hp,charStats(c).hp));save();renderAll();return;}healParty(1);G.potions++;out.push("Musique, danses et cidre frais : le groupe repart d’un bon pied, une potion en poche.");}
+  if(s===2){if(v===0){healParty(1);G.potions+=3;out.push("Tu repars le ventre plein, avec trois fioles offertes par Mère Odile.");}else{addHonor(2);out.push("Les familles pauvres n’oublieront pas ton geste.");}}
+  if(s===3){if(v===0){const n=Math.min(3,1+CHR.lineages.length);addHonor(n);out.push(`Tu allumes une bougie pour chaque lignée tombée avant la tienne. +${n} honneur.`);}
+    else{const left=Object.keys(FRAGS).filter(k=>!(CHR.fragments||{})[k]);if(left.length){save();renderAll();await revealFrag(pick(left),"Une vieille femme te prend la main. « Écoute bien, c’est ma grand-mère qui me l’a raconté… »");return;}
+      const x=20*L;partyChars().forEach(c=>gainXp(c,x));out.push(`Les anciens racontent les batailles d’autrefois : +${x} XP pour le groupe.`);}}
+  save();renderAll();await story(`${F.ic} ${F.n}`,out);await announceSkills();
+}
+
 /* ---------- Temps et famille ---------- */
 function passDays(n){
   for(let i=0;i<n;i++){
@@ -1042,6 +1124,11 @@ function passDays(n){
     }
     for(const k of kids())if(!k.cls&&k.grow<100){if(k.rev===undefined){k.grow=Math.min(100,k.grow+GROW);if(k.grow>=100)toast(`${k.name} est en âge de choisir sa voie.`);}else growKid(k,GROW);}
     for(const m of mercs())if(m.until&&G.day>=m.until){G.party=G.party.filter(x=>x!==m.id);delete G.chars[m.id];toast(`⏳ ${m.name} a fini son contrat et reprend la route.`);}
+    if(G.day>1&&dayInSeason()===1){const S=season();news(`${S.ic} ${S.le} arrive : ${S.d}.`);toast(`${S.ic} ${S.n} : ${S.d}.`);}
+    if(dayInSeason()===4){const F=season().fest;news(`${F.ic} Au village, place à ${F.a}, pour deux jours !`);toast(`${F.ic} Au village, place à ${F.a} !`);}
+    for(const m of mercs())if(m.perk==="alchimiste"&&m.hired&&G.day>m.hired&&(G.day-m.hired)%5===0){G.potions++;toast(`🧪 ${m.name} a préparé une potion.`);}
+    if(G.rival&&G.rival.challenge&&G.day>G.rival.challenge){const R=CHR.rival;G.rival.challenge=0;G.rival.honor+=3;addHonor(-1);news(`Tu ne t’es pas présenté${ef(hero())} au duel de ${R.heir} Corbeval : les Corbeval se moquent de ta lignée (−1 honneur).`);}
+    if(G.day-(G.lastWorld||0)>=3&&Math.random()<.22)worldEvent();
     const mine=kids().filter(k=>k.parent===G.heroId);
     if(G.married&&G.expecting&&G.day>=G.expecting){G.expecting=0;birth(false);}
     else if(G.married&&!G.expecting&&mine.length<MAX_KIDS&&hero()&&(hero().age||25)<50&&Math.random()<.008){G.expecting=G.day+3;toast("💛 Une heureuse surprise : un enfant est en route !");}
@@ -1061,7 +1148,7 @@ function birth(adopt){
   else{mem(k,`Naît au foyer ${deN(h.name)}${G.partner?` et ${G.partner.name}`:""}.`);mem(h,`Naissance ${deN(name)}.`);}
   G.tries=0;toast(adopt?`🏠 ${name} rejoint la famille.`:`👶 ${name} vient de naître !`);return k;
 }
-function birthChance(){const a=hero().age||25;if(a>=50)return 0;let p=.2+.1*(G.tries||0);if(a>=35)p-=.05;if(a>=40)p-=.08;if(bld("temple"))p+=.05;return Math.max(.05,Math.min(.6,p));}
+function birthChance(){const a=hero().age||25;if(a>=50)return 0;let p=.2+.1*(G.tries||0);if(a>=35)p-=.05;if(a>=40)p-=.08;if(bld("temple"))p+=.05;if(seasonIdx()===0)p+=.1;return Math.max(.05,Math.min(.7,p));}
 const chanceTxt=p=>p===0?"Il est désormais trop tard pour avoir des enfants.":p<.3?"Les chances semblent minces…":p<.55?"Rien n’est joué.":"Les chances semblent bonnes.";
 async function foyer(){
   const mk=myKids(),p=birthChance(),full=mk.length>=MAX_KIDS;
@@ -1118,7 +1205,7 @@ function renderTop(){
   $("#hero-px").innerHTML=charImg(h,36);
   $("#fam").textContent=`Lignée ${G.family.name}`;
   $("#gen").textContent=`${G.family.gen===1?"1ʳᵉ":G.family.gen+"ᵉ"} génération · ${h.name}, ${CLASSES[h.cls].n.toLowerCase()} niv. ${h.lvl}`;
-  $("#gold").textContent=G.gold;$("#pots").textContent=G.potions;$("#day").textContent=G.day;
+  $("#gold").textContent=G.gold;$("#pots").textContent=G.potions;$("#day").textContent=G.day;$("#sic").textContent=season().ic;
 }
 function renderGoal(){const s=curStep();$("#goal").innerHTML=s?`<b>Objectif</b> ${esc(s.t)}`:`<b>Objectif</b> Tous les chapitres sont terminés pour l’instant.`;}
 function pathTo(dest){
@@ -1141,12 +1228,12 @@ function renderMap(){
       <image href="${spr(k)}" x="${L.x-16}" y="${L.y-16}" width="32" height="32"/>
       <text class="nl" x="${L.x}" y="${L.y+36}" text-anchor="middle">${esc(L.s)}</text>
       ${k===goal&&k!==G.loc?`<text class="mk" x="${L.x+14}" y="${L.y-12}">❗</text>`:""}
-      ${k===nl?`<text class="mk" x="${L.x-30}" y="${L.y-12}">💀</text>`:""}${CHR.legends.some(l=>!l.slain&&l.loc===k)||CHR.souls.some(x=>!x.freed&&x.loc===k)?`<text class="mk" x="${L.x-7}" y="${L.y-25}">☠️</text>`:""}
+      ${k===nl?`<text class="mk" x="${L.x-30}" y="${L.y-12}">💀</text>`:""}${infestAt(k)?`<text class="mk" x="${L.x+12}" y="${L.y+30}">🔥</text>`:""}${CHR.legends.some(l=>!l.slain&&l.loc===k)||CHR.souls.some(x=>!x.freed&&x.loc===k)?`<text class="mk" x="${L.x-7}" y="${L.y-25}">☠️</text>`:""}
       ${questMarker(k)?`<circle class="qd" cx="${L.x+20}" cy="${L.y+12}" r="7"/><text class="qt" x="${L.x+20}" y="${L.y+16}" text-anchor="middle">?</text>`:""}</g>`;}
   $("#map").innerHTML=h;
   const tb=$("#tbar");
   if(selLoc&&route){const L=LOCS[selLoc];
-    tb.innerHTML=`${img(selLoc,null,32)}<div class="tt"><b>${esc(L.n)}</b><br><span class="muted">${route.length} jour${route.length>1?"s":""} de marche${L.safe?"":` · danger niv. ${L.lv[0]} à ${L.lv[1]}`}</span></div><button class="btn small primary" id="go-travel">Partir</button><button class="btn small" id="no-travel" aria-label="Annuler">✕</button>`;
+    tb.innerHTML=`${img(selLoc,null,32)}<div class="tt"><b>${esc(L.n)}</b><br><span class="muted">${route.length} jour${route.length>1?"s":""} de marche${infestAt(selLoc)?" · 🔥 bêtes agitées":""}</span></div><button class="btn small primary" id="go-travel">Partir</button><button class="btn small" id="no-travel" aria-label="Annuler">✕</button>`;
     tb.hidden=false;
   }else tb.hidden=true;
 }
@@ -1164,6 +1251,7 @@ function renderLoc(){
       <button class="btn" data-a="arena">🏟️ Arène</button>
       <button class="btn" data-a="cemetery">⚱️ Cimetière</button>
       <button class="btn" data-a="build">🏗️ Chantiers</button>
+      ${isFest()&&!G.fest[festKey()]?`<button class="btn primary wide" data-a="fest">${season().fest.ic} ${season().fest.n}<br><small>La fête bat son plein</small></button>`:""}
       <button class="btn wide" data-a="home">🏠 Foyer${!G.married&&G.ch>=1?"<br><small>fonder une famille</small>":""}</button>`;
   }else{
     acts+=`<button class="btn primary wide" data-a="explore">🔍 Explorer (1 jour)</button>`;
@@ -1180,7 +1268,7 @@ function renderLoc(){
   const ns=npcsAt(k);
   if(ns.length)extra+=`<div class="npcs">${ns.map(n=>{const N=NPCS[n],s=npcQuest(n);const tag=s?(s.st==="offer"?"Quête !":s.st==="ready"?"Terminé !":"En cours"):"";
     return `<button class="npc" data-npc="${n}">${img(N.sp,N.swap,40)}<div><div class="nm">${esc(N.n)}</div><div class="sb">${esc(N.title)}</div></div>${tag?`<span class="q">${tag}</span>`:""}</button>`;}).join("")}</div>`;
-  $("#loc").innerHTML=`<div class="loc-h">${img(k,null,48)}<div><h2>${esc(L.n)}</h2><div class="sub">${L.safe?"Lieu sûr":`Danger : niveau ${L.lv[0]} à ${L.lv[1]}`}</div></div></div><p>${esc(L.d)}</p><div class="acts">${acts}</div>${extra}`;
+  $("#loc").innerHTML=`<div class="loc-h">${img(k,null,48)}<div><h2>${esc(L.n)}</h2><div class="sub">${L.safe?"Lieu sûr":infestAt(k)?"🔥 Bêtes agitées : récompenses ×1,5":"Terres sauvages"}${!L.safe&&FRAGS[k]?((CHR.fragments||{})[k]?" · 📜 secret découvert":" · 📜 un secret dort ici"):""}</div></div></div><p>${esc(L.d)}</p><div class="acts">${acts}</div>${extra}`;
 }
 function renderFamily(){
   const h=hero(),hs=charStats(h),HC=CLASSES[h.cls];
@@ -1210,9 +1298,9 @@ function charCard(c){
   if(!c.cls)return `<div class="card"><div class="card-h">${charImg(c,48)}<div><div class="nm">${esc(c.name)}</div><div class="sb">${c.grow<100?`Enfant · ${c.grow<35?"tout petit"+ef(c):c.grow<70?"grandit à vue d’œil":"presque grand"+ef(c)}`:(c.g==="f"?"Prête":"Prêt")+" à choisir sa voie"}</div>${traitTags(c)}</div></div>${traitLines(c)}
       <div class="bar gold" style="margin-top:8px"><i style="width:${c.grow}%"></i></div><div class="btns">${c.grow>=100?`<button class="btn primary" data-f="cls" data-id="${c.id}">Choisir sa classe</button>`:`<button class="btn small" data-f="time" data-id="${c.id}" ${c.timeDay===G.day?"disabled":""}>${c.timeDay===G.day?"💛 Déjà ensemble aujourd’hui":"💛 Passer du temps"}</button>`}<button class="btn small" data-f="mem" data-id="${c.id}" aria-label="Carnet">📖</button><button class="btn small" data-f="rename" data-id="${c.id}" aria-label="Renommer">✏️</button></div></div>`;
   const s=charStats(c),C=CLASSES[c.cls],inP=G.party.includes(c.id),cap=hero().lvl-1,tp=trainPrice(c);
-  return `<div class="card"><div class="card-h">${charImg(c,48)}<div><div class="nm">${esc(c.name)}${c.kind==="merc"?'<span class="tagline">lame à louer</span>':""}${inP?'<span class="tagline">dans le groupe</span>':""}</div><div class="sb">${C.n} · ${C.role} · niveau ${c.lvl}${c.age!==undefined?` · ${ageTxt(c)}`:""}</div>${traitTags(c)}</div></div>${traitLines(c)}
+  return `<div class="card"><div class="card-h">${charImg(c,48)}<div><div class="nm">${esc(c.name)}${c.ep?" "+esc(c.ep):""}${c.kind==="merc"?'<span class="tagline">lame à louer</span>':""}${inP?'<span class="tagline">dans le groupe</span>':""}</div><div class="sb">${C.n} · ${C.role} · niveau ${c.lvl}${c.age!==undefined?` · ${ageTxt(c)}`:""}</div>${traitTags(c)}</div></div>${traitLines(c)}
     ${c.kind==="comp"?(()=>{const b=bondLvl(c),nx=BOND[b+1];return `<div class="bondl">💛 ${bondName(c)}${b?` · +${5*b} % PV, attaque, défense`:""}</div>${nx?`<div class="bar bond"><i style="width:${((c.bond||0)-BOND[b])/(nx-BOND[b])*100}%"></i></div>`:""}`;})():""}
-    ${c.kind==="merc"?`<div class="bondl">⏳ Contrat : encore ${Math.max(0,c.until-G.day)} jour${c.until-G.day>1?"s":""}</div>`:""}
+    ${c.kind==="merc"&&c.perk?`<div class="bondl">🎖️ ${perkName(c)} : ${MERC_PERKS[c.perk].d}</div>`:""}${c.kind==="merc"?`<div class="bondl">⏳ Contrat : encore ${Math.max(0,c.until-G.day)} jour${c.until-G.day>1?"s":""}</div>`:""}
     <div class="stats-line"><span>❤️ ${c.hp}/${s.hp}</span><span>⚔️ ${s.atk}</span><span>🛡️ ${s.def}</span></div>${skillLine(c)}
     <div class="btns"><button class="btn small" data-f="party" data-id="${c.id}" ${!inP&&G.party.length>=2?"disabled":""}>${inP?"Laisser au village":"Emmener"}</button>
     ${c.kind!=="merc"?`<button class="btn small" data-f="mem" data-id="${c.id}" aria-label="Carnet">📖</button>`:""}${c.kind==="child"?`<button class="btn small" data-f="rename" data-id="${c.id}" aria-label="Renommer">✏️</button>`:""}
@@ -1229,6 +1317,14 @@ function renderJournal(){
     html+=`<h2>${esc(c.t)}</h2><ul class="steps">${c.steps.map((s,i)=>`<li class="${i<G.step?"done":i===G.step?"cur":"fut"}"><span class="m">${i<G.step?"✔":i===G.step?"▸":"·"}</span><span>${i>G.step?"…":esc(s.t)}</span></li>`).join("")}</ul>
       <div class="btns"><button class="btn small" data-j="intro">Relire le début du chapitre</button></div>`;
   }else html+=`<h2>Chapitres terminés</h2><p class="muted">De nouveaux chapitres arriveront dans une prochaine mise à jour.</p>`;
+  {const S=season(),F=S.fest,dl=4-dayInSeason();
+    html+=`<h2>${S.ic} ${S.n} · jour ${G.day}</h2><div class="card"><div class="hp-txt">Cette saison, ${S.d}. Elle dure encore ${SEASON_LEN-dayInSeason()+1} jour${SEASON_LEN-dayInSeason()?"s":""}.</div><div class="hp-txt" style="margin-top:4px">${isFest()?(G.fest[festKey()]?`${F.ic} ${F.n} : tu y as déjà participé.`:`${F.ic} ${F.n} : c’est maintenant, au village !`):dl>0?`${F.ic} ${F.n} dans ${dl} jour${dl>1?"s":""}.`:`${F.ic} ${F.n} : c’est passé. Rendez-vous à la saison prochaine.`}</div>
+      ${G.news&&G.news.length?`<ul class="carnet">${G.news.slice(0,5).map(n=>`<li><span class="cd">Jour ${n.d}</span>${esc(n.t)}</li>`).join("")}</ul>`:`<p class="hp-txt">Aucune nouvelle de la vallée pour l’instant.</p>`}</div>`;}
+  if(G.rival&&G.rival.met){const R=CHR.rival,r=G.rival,mx=Math.max(1,G.honor,r.honor);
+    html+=`<h2>${r.allied?"Alliés":"Rivaux"} : les Corbeval</h2><div class="card"><div class="card-h">${img("chevalier",CORB_SWAP,48)}<div><div class="nm">${esc(R.heir)} Corbeval</div><div class="sb">${R.gen>1?`${R.gen}ᵉ génération · `:""}${r.allied?"unis à ta famille par le mariage":r.beaten?`battu${R.g==="f"?"e":""} ${r.beaten} fois en duel`:"pas encore affronté"}</div></div></div>
+      ${r.allied?`<p class="pc">L’alliance a mis fin à la rivalité. Grâce aux relations des Corbeval, les lames à louer coûtent 20 % de moins.</p>`:`<div class="hp-txt" style="margin-top:6px">Réputation des ${esc(G.family.name)} : ${G.honor}</div><div class="bar gold"><i style="width:${G.honor/mx*100}%"></i></div><div class="hp-txt" style="margin-top:4px">Réputation des Corbeval : ${r.honor}</div><div class="bar"><i style="width:${r.honor/mx*100}%;background:#7a3aa0"></i></div><p class="pc muted">${r.honor>G.honor?"Pour l’instant, c’est d’eux que parle le village.":"Pour l’instant, c’est de ta lignée que parle le village."}${r.challenge?` Un défi t’attend à l’arène jusqu’au jour ${r.challenge}.`:""}</p>`}</div>`;}
+  {const fk=Object.keys(FRAGS),fd=CHR.fragments||{};
+    html+=`<h2>Secrets d’Aldor <span class="muted" style="font-size:.9rem">(${fk.filter(k=>fd[k]).length} / ${fk.length})</span></h2><div class="card">${fk.filter(k=>fd[k]).map(k=>`<div style="margin-bottom:8px"><b>📜 ${esc(FRAGS[k].t)}</b> <span class="muted" style="font-size:.85rem">· trouvé par les ${esc(fd[k].by)}</span><div class="hp-txt">${esc(FRAGS[k].d)}</div></div>`).join("")||`<p class="hp-txt">Chaque lieu sauvage cache un fragment de l’histoire du royaume d’Aldor. Explore, reviens, écoute les anciens.</p>`}${CHR.aldorDone?`<p class="pos">Le secret a été percé par la lignée ${esc(CHR.aldorDone)}.</p>`:""}</div>`;}
   const r=rank(),t=TITLES[Math.min(r,TITLES.length-1)];
   html+=`<h2>Honneur de la lignée</h2><div class="card"><div class="nm sc">Lignée ${t}</div><div class="bar gold" style="margin:6px 0"><i style="width:${(G.honor%10)*10}%"></i></div>
     <div class="hp-txt">${G.honor} points · ${10-G.honor%10} avant le prochain rang · bonus actuel : +${r*5} % de puissance pour la famille</div>
@@ -1249,7 +1345,7 @@ function renderJournal(){
   const era=CHR.lineages.length+1;
   html+=`<h2>Chroniques de Valbrume</h2><p class="muted" style="margin-top:0">${era===1?"Première ère":era+"ᵉ ère"} de la vallée. Tout ce qui suit survivra à ta lignée et façonnera le monde des suivantes.</p>`;
   if(G.deeds.length)html+=`<div class="card"><div class="nm sc">Hauts faits des ${esc(G.family.name)}</div><ul class="hist">${G.deeds.map(d=>`<li>${esc(d)}</li>`).join("")}</ul></div>`;
-  if(G.relics.length)html+=`<div class="card"><div class="nm sc">Reliques de la famille</div><ul class="hist">${G.relics.map(r=>`<li>${esc(r.n)}, reprise à une légende (lignée ${esc(r.from)}) · +5 % d’attaque</li>`).join("")}</ul></div>`;
+  if(G.relics.length)html+=`<div class="card"><div class="nm sc">Reliques de la famille</div><ul class="hist">${G.relics.map(r=>`<li>${esc(r.n)}, ${r.from==="Aldor"?"héritage des rois d’Aldor":`reprise à une légende (lignée ${esc(r.from)})`} · +5 % d’attaque</li>`).join("")}</ul></div>`;
   if(CHR.legends.length)html+=`<div class="card"><div class="nm sc">Légendes de la vallée</div>${CHR.legends.map(l=>`<div class="foe">${img(l.sp,l.swap,40)}<div><b>${esc(l.n)}</b><div class="tg" style="color:var(--${l.slain?"good":"bad"})">${l.slain?`Abattu par la lignée ${esc(l.slainBy)}`:`Rôde vers ${esc(LOCS_BASE[l.loc].n)} · niv. ${l.lvl}`}</div><div class="hp-txt">A éteint la lignée ${esc(l.lineage)}</div></div></div>`).join("")}</div>`;
   if(CHR.lineages.length)html+=`<div class="card"><div class="nm sc">Lignées passées</div><ul class="hist">${CHR.lineages.slice().reverse().map(l=>`<li><b>Lignée ${esc(l.name)}</b>, ${l.gens} génération${l.gens>1?"s":""} : ${esc(l.end)}, jour ${l.day}. Dernière épreuve : ${esc(l.reached)}.${l.deeds.length?` <span class="muted">${esc(l.deeds.join(" · "))}</span>`:""}</li>`).join("")}</ul></div>`;
   else html+=`<p class="muted">Aucune lignée ne t’a précédé. Ce que tu accompliras deviendra l’histoire de la vallée.</p>`;
@@ -1285,7 +1381,7 @@ async function travel(dest){
   traveling=true;selLoc=null;
   for(const k of p){
     passDays(1);G.loc=k;G.visited[k]=true;save();renderAll();
-    if(!LOCS[k].safe&&Math.random()<[.45,.34,.24][bld("palissade")]){
+    if(!LOCS[k].safe&&Math.random()<[.45,.34,.24][bld("palissade")]*[1,.75,1,1.25][seasonIdx()]*(hasPerk("eclaireur")?.7:1)){
       await sleep(250);
       const r=await roadEvent(k);
       if(r==="lose"||!hero()||G.loc!==k)break;
@@ -1330,6 +1426,7 @@ async function locAction(a){
   else if(a==="arena")arena();
   else if(a==="cemetery")cemetery();
   else if(a==="build")buildings();
+  else if(a==="fest")fest();
   else if(a==="explore")explore();
   else if(a==="boss")bossPreview();
   else if(a==="nemesis")nemesisPreview();
@@ -1347,14 +1444,22 @@ function forge(){
       const before=charStats(c).hp;G.gold-=fcost(t);c[key]++;c.hp+=charStats(c).hp-before;
       save();renderAll();toast(`${c.name} : équipement ${t.n} forgé.`);checkProgress();forge();};}});
 }
+function tavernOffers(){
+  const key=Math.floor((G.day-1)/3);
+  if(!G.tavern||G.tavern.key!==key){const perks=Object.keys(MERC_PERKS).sort(()=>Math.random()-.5),cls=Object.keys(CLASSES).sort(()=>Math.random()-.5),taken=[];
+    G.tavern={key,list:[0,1,2].map(i=>{const g=Math.random()<.5?"m":"f",name=freshName(g,taken);taken.push(name);return{name,g,cls:perks[i]==="garde"&&!["gardien","guerrier"].includes(cls[i])?"gardien":cls[i],perk:perks[i],ep:pick(g==="f"?EP_F:EP_M),fl:pick(MERC_PERKS[perks[i]].fl)};})};}
+  return G.tavern.list;
+}
 async function tavern(){
-  const lvl=Math.max(1,hero().lvl-1)+(bld("salle")>=2?1:0);
-  if(G.party.length>=2){await modal(`<h3>🍺 La taverne</h3><p>Ton groupe est déjà complet. Laisse un compagnon au village depuis l’onglet Famille pour en recruter un autre.</p>`,[{l:"Fermer"}]);return;}
-  const cls=await chooseClass("🍺 La taverne",`Des lames à louer de niveau ${lvl} cherchent du travail, pour un contrat de ${CONTRACT} jours. Pour de vrais compagnons, il faudra gagner la confiance des gens de la vallée.`,()=>mercPrice(lvl));
-  if(!cls)return;if(G.gold<mercPrice(lvl))return toast("Pas assez d’or.");
-  G.gold-=mercPrice(lvl);const used=new Set(Object.values(G.chars).map(c=>c.name));
-  const m=newChar(freshName(Math.random()<.5?"m":"f"),cls,"merc",lvl);m.traits=[pick(Object.keys(TRAITS).filter(k=>!TRAITS[k].rare&&k!=="longevif"&&k!=="frileux"))];m.until=G.day+CONTRACT;m.hp=charStats(m).hp;G.chars[m.id]=m;G.party.push(m.id);
-  save();toast(`${m.name} rejoint ton groupe.`);renderAll();checkProgress();
+  const lvl=Math.max(1,hero().lvl-1)+(bld("salle")>=2?1:0),price=mercPrice(lvl);
+  if(G.party.length>=2){await modal(`<h3>🍺 La taverne</h3><p>Ton groupe est déjà complet. Laisse un compagnon au village depuis l’onglet Famille pour en engager un autre.</p>`,[{l:"Fermer"}]);return;}
+  const offers=tavernOffers();
+  const v=await modal(`<h3>🍺 La taverne</h3><p class="muted">Des lames à louer de niveau ${lvl}, engagées pour ${CONTRACT} jours à ${price} 🪙. Chacune a son savoir-faire. Les visages changent tous les trois jours.</p>`,
+    offers.map((o,i)=>({l:o.hired?`<span class="nm">${esc(o.name)} ${esc(o.ep)}</span> <span class="jb">· déjà engagé${o.g==="f"?"e":""}</span>`:`<span class="nm">${esc(o.name)} ${esc(o.ep)}</span> <span class="jb">· ${CLASSES[o.cls].n.toLowerCase()}</span><span class="tl pos">🎖️ ${perkName(o)} : ${MERC_PERKS[o.perk].d}</span><span class="tl muted">${o.g==="f"?"Elle":"Il"} ${esc(o.fl)}.</span>`,cls:"pick",v:i,dis:o.hired||G.gold<price})).concat([{l:"Partir",v:null}]));
+  if(v===null||v===undefined)return;const o=offers[v];if(G.gold<price)return toast("Pas assez d’or.");
+  G.gold-=price;o.hired=true;
+  const m=newChar(o.name,o.cls,"merc",lvl);m.g=o.g;m.ep=o.ep;m.perk=o.perk;m.hired=G.day;m.until=G.day+CONTRACT;m.traits=[pick(Object.keys(TRAITS).filter(k=>!TRAITS[k].rare&&k!=="longevif"&&k!=="frileux"))];m.hp=charStats(m).hp;G.chars[m.id]=m;G.party.push(m.id);
+  save();toast(`${m.name} ${m.ep} rejoint ton groupe pour ${CONTRACT} jours.`);renderAll();checkProgress();
 }
 async function home(){
   if(G.married)return foyer();
@@ -1365,11 +1470,13 @@ async function home(){
   const goods=GOOD_TRAITS.slice().sort(()=>Math.random()-.5),bads=Object.keys(TRAITS).filter(k=>!TRAITS[k].good&&!TRAITS[k].rare);
   const cands=[0,1,2].map(i=>{const tr=[goods[i]],r=Math.random();if(r<.45)tr.push(pick(bads));else if(r<.7)tr.push(goods[i+3]);
     return {name:(()=>{const nm=freshName(og,taken);taken.push(nm);return nm;})(),g:og,job:jobs[i],traits:tr};});
+  if(CHR.rival&&G.rival&&G.rival.met&&!G.rival.allied&&Math.random()<.45){const nm=freshName(og,taken);cands[2]={name:nm,g:og,job:og==="f"?"héritière des Corbeval":"héritier des Corbeval",traits:[goods[2],goods[5]||goods[0]],corb:true};}
   const tl=c=>c.traits.map(t=>`<span class="tl ${TRAITS[t].good||TRAITS[t].rare?"pos":"neg"}">${TRAITS[t].good||TRAITS[t].rare?"+":"−"} ${TRAITS[t].n} : ${TRAITS[t].d}</span>`).join("");
   const v=await modal(`<h3>🏠 Fonder une famille</h3><p>Depuis ton retour, plusieurs habitants de Valbrume te font les yeux doux. Vos enfants hériteront en partie de vos traits.</p><p class="muted">Touche la personne que tu veux épouser.</p>`,
     cands.map((c,i)=>({l:`<span class="nm">${esc(c.name)}</span> <span class="jb">· ${esc(c.job)}</span>${tl(c)}`,cls:"pick",v:i})).concat([{l:"Plus tard",v:null}]));
   if(v===null||v===undefined)return;
   const partner=cands[v].name;G.partner=cands[v];mem(hero(),`Épouse ${partner}, ${cands[v].job}.`);
+  if(cands[v].corb){G.rival.allied=true;G.rival.challenge=0;addHonor(3);deed(`Alliance avec les Corbeval`);news(`Les ${G.family.name} et les Corbeval s’unissent par le mariage. Toute la vallée en parle.`);}
   G.married=true;G.flags.family=true;G.tries=0;G.expecting=0;save();
   await story("Un nouveau départ",[`Tout Valbrume se réunit pour les noces de {hero} et ${partner}. Pour une soirée, on oublie les pillards et les sorciers.`,"Les enfants ne viennent pas toujours quand on les attend : c’est au Foyer que vous pourrez essayer d’en avoir. Deux au plus, par les temps qui courent."]);
   checkProgress();
@@ -1390,7 +1497,7 @@ function makeChampion(id,lvl){const c=CHAMPS[id];return {...makeEnemy(c.tpl,lvl|
 function resMult(tags,type){let m=1;if(type==="phys"&&tags.includes("phys"))m*=2/3;if(type==="magie"&&tags.includes("magie"))m*=2/3;if(type==="lumiere"&&tags.includes("lumiere"))m*=1.5;return m;}
 const eRes=(e,t)=>e.broken&&t!=="lumiere"?1:resMult(e.tags,t);
 const FX0={act(){},hit(){},heal(){},log(){},foeHit(){},riposte(){}};
-function mkAlly(c){const s=charStats(c);return{ref:c,n:c.name,cls:c.cls,hp:Math.max(1,Math.min(c.hp,s.hp)),max:s.hp,atk:s.atk,def:s.def,dmg:CLASSES[c.cls].dmg,sk:skillsOf(c),cds:{},taunt:0,riposte:0,bless:0,vif:hasT(c,"vif"),hero:c.id===G.heroId};}
+function mkAlly(c){const s=charStats(c);return{ref:c,n:c.name,cls:c.cls,hp:Math.max(1,Math.min(c.hp,s.hp)),max:s.hp,atk:s.atk,def:s.def,dmg:CLASSES[c.cls].dmg,sk:skillsOf(c),cds:{},taunt:c.perk==="garde"?1:0,riposte:0,bless:0,vif:hasT(c,"vif"),hero:c.id===G.heroId};}
 const mkFoe=e=>({...e,max:e.hp,stun:0,broken:false});
 const alive=l=>l.filter(x=>x.hp>0);
 const ready=(a,id)=>a.sk.includes(id)&&!(a.cds[id]>0);
@@ -1493,7 +1600,8 @@ async function preview(title,text,en,ctx,mode="normal"){
   return"avoid";
 }
 async function explore(){
-  const k=G.loc,L=LOCS[k];passDays(1);save();renderAll();
+  const k=G.loc,L=LOCS[k];passDays(1);G.visits=G.visits||{};G.visits[k]=(G.visits[k]||0)+1;save();renderAll();
+  if(FRAGS[k]&&!(CHR.fragments||{})[k]&&G.visits[k]>=2&&Math.random()<.3){await revealFrag(k,`En fouillant ${LOC_IN[k]||LOCS[k].n}, tu tombes sur quelque chose que personne n’avait remarqué.`);checkProgress();return;}
   if(Math.random()<.4)await runEvent(pick(EVENTS),ri(L.lv[0],L.lv[1]));
   else{const en=wildGroup(k);const names=[...new Set(en.map(e=>e.n.toLowerCase()))].join(", ");
     await preview("Rencontre",`Tu repères ${en.length>1?"un groupe":"une créature"} : ${esc(names)}. Ils ne t’ont pas encore vu.`,en,{type:"wild"});}
@@ -1623,7 +1731,9 @@ async function arenaPrompt(en,title,desc){
 }
 async function arena(){
   const L=hero().lvl,done=Object.keys(CHAMPS).filter(k=>G.champs[k]),tHonor=!G.tourney[G.ch],fee=15*L,today=duelsToday();
+  const rv=G.rival&&G.rival.challenge&&!G.rival.allied?CHR.rival:null;
   const v=await modal(`<h3>🏟️ L’arène de Valbrume</h3><p class="muted">On s’y bat pour la gloire, et on y parie gros. Personne n’y meurt : les soigneurs veillent.</p>`,[
+    ...(rv?[{l:`⚔️ Relever le défi de ${esc(rv.heir)} Corbeval<br><small>Jusqu’au jour ${G.rival.challenge} · +3 honneur en cas de victoire</small>`,cls:"primary",v:"rival"}]:[]),
     {l:`🎲 Parier sur un duel<br><small>${today>=3?"Plus de duels aujourd’hui":`${3-today} duel${3-today>1?"s":""} restant${3-today>1?"s":""} aujourd’hui · mise max ${maxBet()} 🪙`}</small>`,v:"duel",dis:today>=3||maxBet()<5},
     {l:`🗡️ Entraînement<br><small>Moitié moins d’expérience, pas d’or · tu peux parier sur toi</small>`,v:"train"},
     {l:`🏆 Tournoi en trois manches<br><small>Inscription ${fee} 🪙 · prix ${60*L} 🪙${tHonor?" + 3 honneur":""}</small>`,v:"tour",dis:G.gold<fee},
@@ -1631,6 +1741,10 @@ async function arena(){
     {l:"Partir",v:null}],{dismiss:false});
   if(!v)return;
   if(v==="duel")return duel();
+  if(v==="rival"){const R=CHR.rival,n=partyChars().length;const team=[makeEnemy("chevalier",L,{n:`${R.heir} Corbeval`,swap:CORB_SWAP,r:2}),...arenaTeam(n-1,L)];tuneTeam(team,.5);
+    const ok=await modal(`<h3>⚔️ ${esc(R.heir)} Corbeval</h3><p class="dlg">« Enfin ! Je commençais à croire que les ${esc(G.family.name)} avaient peur de moi. »</p>${foeList(team)}<div class="diff">Estimation : <span class="${difficulty(team)[1]}">${difficulty(team)[0]}</span></div>`,[{l:"⚔️ En garde !",cls:"primary",v:true},{l:"Pas aujourd’hui",v:false}],{dismiss:false});
+    if(!ok)return;const snap2={};for(const c of partyChars())snap2[c.id]=c.hp;
+    await startCombat(team,{type:"arena",bg:ARENA_BG,rival:true,honor:3});for(const c of partyChars())if(snap2[c.id]!==undefined)c.hp=Math.max(snap2[c.id],Math.min(c.hp,charStats(c).hp));save();renderAll();return;}
   const snap={};for(const c of partyChars())snap[c.id]=c.hp;
   const restore=()=>{for(const c of partyChars())if(snap[c.id]!==undefined)c.hp=Math.max(snap[c.id],Math.min(c.hp,charStats(c).hp));save();renderAll();};
   if(v==="train"){
@@ -1786,12 +1900,15 @@ async function endCombat(r){
     save();renderAll();toast(`Tu prends la fuite${lost?` en laissant ${lost} 🪙`:""}.`);return c.res("flee");
   }
   if(r==="lose"){
-    if(arena){for(const a of c.allies)a.ref.hp=Math.max(1,Math.round(a.max*.2));save();renderAll();
-      await modal(`<h3>Défaite</h3><p>Tu poses un genou à terre. Les soigneurs de l’arène t’aident à te relever sous les applaudissements polis du public.</p>${c.ctx.bet&&c.ctx.bet.bet?`<p class="neg">Ta mise de ${c.ctx.bet.bet} 🪙 est perdue.</p>`:""}`,[{l:"Continuer"}],{dismiss:false});return c.res("lose");}
+    if(arena){for(const a of c.allies)a.ref.hp=Math.max(1,Math.round(a.max*.2));
+      if(c.ctx.rival){const R=CHR.rival,r=rival();r.honor+=2;r.challenge=0;addHonor(-1);news(`${R.heir} Corbeval a battu ${hero().name} ${G.family.name} en duel.`);}
+      save();renderAll();
+      await modal(`<h3>Défaite</h3>${c.ctx.rival?`<p class="neg">${esc(CHR.rival.heir)} Corbeval lève les bras sous les vivats. Les Corbeval marquent un point, et ta lignée perd 1 honneur.</p>`:""}<p>Tu poses un genou à terre. Les soigneurs de l’arène t’aident à te relever sous les applaudissements polis du public.</p>${c.ctx.bet&&c.ctx.bet.bet?`<p class="neg">Ta mise de ${c.ctx.bet.bet} 🪙 est perdue.</p>`:""}`,[{l:"Continuer"}],{dismiss:false});return c.res("lose");}
     await heroDeath(c);return c.res("lose");
   }
-  const xp=Math.round(c.enemies.reduce((s,e)=>s+e.xp,0)*(c.ctx.xpMul||1)),gold=Math.round(c.enemies.reduce((s,e)=>s+e.gold,0)*goldMul());G.gold+=gold;
-  const ups=[],extra=[];
+  const inf=!arena&&c.ctx.type==="wild"&&infestAt(G.loc);
+  const xp=Math.round(c.enemies.reduce((s,e)=>s+e.xp,0)*(c.ctx.xpMul||1)*(hasPerk("conteur")?1.1:1)*(seasonIdx()===3?1.2:1)*(inf?1.5:1)),gold=Math.round(c.enemies.reduce((s,e)=>s+e.gold,0)*goldMul()*(inf?1.5:1));G.gold+=gold;
+  const ups=[],extra=[];if(inf)extra.push("🔥 Les bêtes agitées rapportent davantage.");
   for(const a of c.allies){const u=gainXp(a.ref,xp);if(u)ups.push(`${a.ref.name} passe niveau ${a.ref.lvl} !`);}
   if(!arena)for(const e of c.enemies)for(const [k,s] of Object.entries(G.quests)){const g=QUESTS[k].goal;if(s.st==="active"&&g.k==="kill"&&g.tpl===e.tpl&&!e.champ)s.c++;}
   if(c.ctx.bet&&c.ctx.bet.bet>0){const g=Math.round(c.ctx.bet.bet*c.ctx.bet.odds);G.gold+=g;extra.push(`🎲 Pari gagné : +${g} 🪙 (mise ${c.ctx.bet.bet} 🪙).`);}
@@ -1814,6 +1931,8 @@ async function endCombat(r){
     if(b1>b0){const line=COMPS[r.key]?COMPS[r.key].bond[b1-1]:"";r.hp=charStats(r).hp;extra.push(`💛 ${r.name} devient ${b1===3?"inséparable":bondName(r).toLowerCase()} ${deN(hero().name)} : « ${line} »`);mem(r,`Devient ${bondName(r).toLowerCase()} ${deN(hero().name)}.`);mem(hero(),`${r.name} : « ${line} »`);}}
   if(c.ctx.type==="soul"){const so=CHR.souls.find(x=>x.id===c.ctx.id);if(so&&!so.freed){so.freed=true;saveChr();for(const a of c.allies)mem(a.ref,`Libère l’âme ${deN(so.full)}.`);addHonor(4);deed(`Âme de ${so.full} libérée`);extra.push(`🕯️ L’âme de ${so.full} trouve enfin le repos. Avant de disparaître, elle murmure ton nom : +4 honneur.`);}}
   for(const a of c.allies)if(a.ref.hp<=0)a.ref.hp=Math.round(a.max*.3);
+  if(hasPerk("herboriste")){healParty(.1);extra.push("🌿 Les herbes de ton herboriste soulagent le groupe.");}
+  if(c.ctx.rival){const R=CHR.rival,r=rival();r.honor=Math.max(0,r.honor-2);r.beaten++;r.challenge=0;extra.push(`⚔️ ${R.heir} Corbeval mord la poussière devant tout Valbrume. Les Corbeval perdent de leur superbe.`);mem(hero(),`Bat ${R.heir} Corbeval en duel à l’arène.`);news(`${hero().name} ${G.family.name} a battu ${R.heir} Corbeval en duel.`);}
   save();renderAll();
   if(!(arena&&c.ctx.round&&c.ctx.round<3)||ups.length)
     await modal(`<h3>Victoire !</h3><p>+${xp} XP pour chaque membre du groupe${gold?` · +${gold} 🪙`:""}</p>${ups.map(u=>`<p class="pos">⭐ ${esc(u)}</p>`).join("")}${extra.map(t=>`<p>${esc(t)}</p>`).join("")}`,[{l:"Continuer",cls:"primary"}],{dismiss:false});
@@ -1933,7 +2052,7 @@ function veillee(ruin){
 }
 async function newGame(){
   G={v:3,day:1,gold:30,potions:3,ch:0,step:0,seenIntro:0,flags:{},visited:{village:true},loc:"village",chars:{},heroId:null,party:[],choices:{},deeds:[],relics:[],prayed:{},variants:{},worldSnap:JSON.parse(JSON.stringify(CHR.world)),pending:[],partner:null,
-     family:{name:"",gen:1,history:[]},honor:0,quests:{},champs:{},tourney:{},married:false,nextBirth:0,nemesis:null,auto:false};
+     family:{name:"",gen:1,history:[]},news:[],mods:{},fest:{},visits:{},honor:0,quests:{},champs:{},tourney:{},married:false,nextBirth:0,nemesis:null,auto:false};
   let cls=null;
   await new Promise(res=>{
     $("#mpanel").innerHTML=`<h3>La Lignée de Valbrume</h3><p class="muted">Une histoire qui peut durer plusieurs générations. Si ton héros tombe, ses enfants poursuivront la quête… et la vengeance.</p>${CHR.lineages.length?`<p class="dlg">Les chroniques de Valbrume se souviennent de ${CHR.lineages.length} lignée${CHR.lineages.length>1?"s":""}. Le monde que tu vas découvrir porte la marque de leurs actes${CHR.legends.some(l=>!l.slain)?", et des légendes rôdent encore dans la vallée":""}.</p>`:""}
@@ -1947,6 +2066,7 @@ async function newGame(){
       if(e.target.id==="go"&&cls){$("#modal").hidden=true;res();}};
   });
   G.family.name=$("#fn").value.trim()||"Montclair";
+  if(CHR.lineages.length&&CHR.rival){CHR.rival.gen++;const rg=Math.random()<.5?"m":"f";CHR.rival.heir=freshName(rg);CHR.rival.g=rg;saveChr();}
   const h=newChar($("#hn").value.trim()||"Aldric",cls,"hero");h.age=18;h.traits=[pick(GOOD_TRAITS)];h.hp=charStats(h).hp;G.chars[h.id]=h;G.heroId=h.id;mem(h,"Prend les armes pour défendre Valbrume.");
   save();renderAll();await story(chap(0).t,txt(chap(0).prologue));
   const tale=veillee(ruinVillage());

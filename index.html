@@ -222,6 +222,38 @@ h2{font-size:1.15rem;margin:18px 0 8px}
 .foe{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .foe .tg{font-size:.8rem;color:var(--warn)}
 .diff{font-family:"Alegreya SC",Georgia,serif;font-size:1.1rem;margin-top:10px}
+.gauge{margin-top:12px}
+.gauge .gl{display:flex;justify-content:space-between;align-items:baseline;font-family:"Alegreya SC",Georgia,serif;font-size:1.05rem}
+.gauge .gl span:last-child{font-family:"Alegreya",Georgia,serif;font-size:.92rem;color:var(--muted)}
+.gauge .gb{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:5px}
+.gauge .gb i{display:block;height:100%;border-radius:6px;background:#c9a227;transition:width .6s}
+.gauge .gb i.pos{background:#3f9a5c}.gauge .gb i.warn{background:#d08a2a}.gauge .gb i.neg{background:#c0443a}
+.skb{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.skb:not(:disabled){animation:skp 1.8s ease-in-out infinite}
+@keyframes skp{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent)}50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 35%,transparent)}}
+.btn.warnb:not(:disabled){border-color:#c0443a;color:#c0443a;animation:wb 1s ease-in-out infinite}
+@keyframes wb{50%{background:color-mix(in srgb,#c0443a 14%,transparent)}}
+.en .ehp{font-size:.66rem;color:var(--muted);line-height:1.1}
+.fl.c{font-size:1.5rem;color:#f0b020;font-weight:800;text-shadow:0 1px 0 #000}
+.fl.m{font-size:.9rem;color:var(--muted)}
+.scene.shake{animation:shk .28s}
+@keyframes shk{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.tabs button.dot::after{content:"";position:absolute;top:6px;left:calc(50% + 10px);width:9px;height:9px;border-radius:50%;background:#d6453a;box-shadow:0 0 0 2px var(--surface)}
+.btn{position:relative}
+.newb{position:absolute;top:-7px;right:-4px;background:#d6453a;color:#fff;font-family:"Alegreya",Georgia,serif;font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.02em}
+.path.goalr{stroke:var(--accent);stroke-width:3;stroke-dasharray:3 6;opacity:.9}
+.maplg{font-size:.72rem;color:var(--muted);text-align:center;margin:4px 0 2px}
+.chip{cursor:pointer}
+.bar.low i{background:#c0443a}
+.chip .potk{font-size:.8rem;margin-left:2px}
+.xpl{display:flex;align-items:center;gap:8px;margin:6px 0}
+.xpl .nmx{width:34%;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xpl .bar{flex:1}
+.xpl .bar i{background:#3b6fd6;transition:width .9s ease-out}
+.lvup{display:inline-block;color:#3f9a5c;font-weight:800;font-family:"Alegreya SC",Georgia,serif;animation:pop .6s ease-out}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.25)}100%{transform:scale(1);opacity:1}}
+.toast.top{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto}
+.intro{display:flex;gap:12px;align-items:center;margin-bottom:6px}
 .dlg{border-left:3px solid var(--accent);padding-left:10px;font-style:italic}
 
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -254,6 +286,7 @@ h2{font-size:1.15rem;margin:18px 0 8px}
   <section class="tab active" id="tab-world">
     <button class="goal" id="goal"></button>
     <div class="mapbox"><svg id="map" viewBox="0 0 360 300" role="group" aria-label="Carte du monde"></svg></div>
+    <div class="maplg">❗ objectif · ? quête · ☠️ légende · 🔥 bêtes agitées · 📜 secret</div>
     <div class="tbar" id="tbar" hidden></div>
     <div class="strip" id="strip"></div>
     <div class="loc" id="loc"></div>
@@ -797,6 +830,8 @@ const BOND=[0,8,20,40];
 const bondLvl=c=>BOND.filter(t=>(c.bond||0)>=t).length-1;
 const bondName=c=>[["Compagnon","Compagne"],["Ami","Amie"],["Frère d’armes","Sœur d’armes"],["Inséparable","Inséparable"]][bondLvl(c)][c.g==="f"?1:0];
 const comps=()=>Object.values(G.chars).filter(c=>c.kind==="comp");
+const tipSeen=k=>!!(CHR.tips&&CHR.tips[k]);
+function markTip(k){CHR.tips=CHR.tips||{};CHR.tips[k]=1;saveChr();}
 const CONTRACT=20;
 const MERC_PERKS={
   eclaireur:{n:["Éclaireur","Éclaireuse"],d:"Moins d’incidents sur la route (−30 %).",fl:["connaît chaque sentier de la vallée","sent une embuscade à cent pas"]},
@@ -918,8 +953,8 @@ function inheritTraits(a,b){
 const goldMul=()=>(bld("marche")>=2?1.1:1)*Math.max(1,...partyChars().map(c=>trM(c,"gold")))*(hasPerk("pillard")?1.15:1)*(seasonIdx()===2?1.2:1);
 function charStats(c){
   const C=CLASSES[c.cls],L=c.lvl;
-  const b=!isFam(c)?1+(c.kind==="comp"?.05*bondLvl(c):0):1+.05*rank(),rb=!isFam(c)?1:1+.05*(G&&G.relics?G.relics.length:0),am=ageMul(c)*(c.voc&&c.voc===c.cls?1.1:1);
-  return {hp:Math.round((C.hp[0]+C.hp[1]*(L-1)+TIERS[c.aT].hp)*b*am*trM(c,"hp")),atk:Math.round((C.atk[0]+C.atk[1]*(L-1)+TIERS[c.wT].atk)*b*rb*am*trM(c,"atk")),def:Math.round((C.def[0]+C.def[1]*(L-1)+TIERS[c.aT].def)*b*trM(c,"def")*(c.voc&&c.voc===c.cls?1:1))};
+  const inj=c.injury&&G&&c.injury>G.day?.8:1,b=!isFam(c)?1+(c.kind==="comp"?.05*bondLvl(c):0):1+.05*rank(),rb=!isFam(c)?1:1+.05*(G&&G.relics?G.relics.length:0),am=ageMul(c)*(c.voc&&c.voc===c.cls?1.1:1);
+  return {hp:Math.round((C.hp[0]+C.hp[1]*(L-1)+TIERS[c.aT].hp)*b*am*trM(c,"hp")*inj),atk:Math.round((C.atk[0]+C.atk[1]*(L-1)+TIERS[c.wT].atk)*b*rb*am*trM(c,"atk")),def:Math.round((C.def[0]+C.def[1]*(L-1)+TIERS[c.aT].def)*b*trM(c,"def")*(c.voc&&c.voc===c.cls?1:1))};
 }
 const hero=()=>G&&G.chars[G.heroId];
 const partyChars=()=>[hero(),...G.party.map(id=>G.chars[id]).filter(Boolean)];
@@ -934,7 +969,10 @@ const maxTier=()=>Math.min(4,G.ch+1+(bld("forge")>=2?1:0));
 const fcost=t=>Math.round(t.cost*(bld("forge")?.8:1));
 function healParty(f){for(const c of partyChars()){const m=charStats(c).hp;c.hp=Math.min(m,Math.round(c.hp+m*f));}}
 function hurtParty(f){for(const c of partyChars()){const m=charStats(c).hp;c.hp=Math.max(1,Math.round(c.hp-m*f));}}
-function gainXp(c,x){x=Math.round(x*trM(c,"xp")*(isFam(c)?[1,1.15,1.3][bld("bibliotheque")]:1));c.xp+=x;const from=c.lvl;let up=0;while(c.xp>=xpNeed(c.lvl)){c.xp-=xpNeed(c.lvl);c.lvl++;up++;}if(up){c.hp=charStats(c).hp;noteSkills(c,from);}return up;}
+function gainXp(c,x){x=Math.round(x*trM(c,"xp")*(isFam(c)?[1,1.15,1.3][bld("bibliotheque")]:1));c.xp+=x;const from=c.lvl;let up=0;while(c.xp>=xpNeed(c.lvl)){c.xp-=xpNeed(c.lvl);c.lvl++;up++;}if(up){c.hp=charStats(c).hp;noteSkills(c,from);
+    if(c.id===G.heroId&&G.family.gen===1&&!kids().length){if(from<7&&c.lvl>=7&&c.lvl<8){news("🍀 L’Ancien te prévient : bientôt, la chance des débutants ne te suivra plus. Pense à l’avenir de ta lignée.");toast("🍀 Bientôt, la chance des débutants ne te suivra plus.");}
+      if(from<8&&c.lvl>=8){news("🍀 La grâce du fondateur s’achève : désormais, une défaite peut te coûter la vie.");toast("🍀 La grâce du fondateur s’achève.");}}}
+  return up;}
 let NEWSK=[];
 function noteSkills(c,from){if(!c||!c.cls)return;for(const id of CLASSES[c.cls].skills){const k=SKILLS[id];if(k.lvl>from&&k.lvl<=c.lvl){NEWSK.push({who:c.name,id});mem(c,`Apprend ${k.n}.`);}}}
 async function announceSkills(){
@@ -1006,6 +1044,12 @@ function applyLocs(){
   if(grukkAlly()){LOCS.bois.en=LOCS.bois.en.filter(e=>e!=="gobelin");if(chap(0).id==="pillards"&&G.flags.boss_grukk){LOCS.camp.n="Village gobelin";LOCS.camp.s="Gobelins";LOCS.camp.d="Les gobelins de Grukk y vivent désormais en paix. Quelques bandits rôdent encore aux alentours.";LOCS.camp.en=["bandit","loup"];}}
 }
 const LOC_IN={champs:"dans les Champs",bois:"dans le Bois des Murmures",camp:"au camp des pillards",marais:"dans le Marais de Fiel",ruines:"dans les Ruines d’Aldor",crypte:"dans la Crypte d’Aldor",mines:"dans les Mines de Karak",pic:"au sommet du Pic de Cendre"};
+function elderNudge(){const sn=k=>CHR.seen&&CHR.seen[k],h=hero();
+  if(!sn("forge")&&G.gold>=TIERS[1].cost)return["« Avec tout cet or, Hilda la forgeronne pourrait faire des merveilles pour toi. »"];
+  if(!sn("tavern")&&partyChars().length===1&&G.ch>=1)return["« Seul, on ne va pas loin. Gros-Louis, à la taverne, connaît des lames qui cherchent du travail. »"];
+  if(!sn("arena")&&h.lvl>=3)return["« Tu veux t’aguerrir sans risquer ta vie ? Maître Aubert t’attend à l’arène. »"];
+  if(!sn("build")&&G.gold>=150)return["« Ton or pourrait servir tout le village. Va voir Maître Anselin, aux chantiers. »"];
+  return[];}
 function trainSpot(){const h=hero().lvl;const ok=Object.keys(LOCS).filter(k=>!LOCS[k].safe&&isUnlocked(k)&&!["camp","crypte","pic"].includes(k)&&LOCS[k].lv[0]<=h);ok.sort((a,b)=>LOCS[b].lv[0]-LOCS[a].lv[0]);return LOC_IN[ok[0]||"champs"];}
 const VISIT_LINES={
   camp:"« Les traces des pillards mènent au-delà du Bois des Murmures. Suis-les, trouve leur repaire… mais n’y entre pas tête baissée. »",
@@ -1062,7 +1106,7 @@ const festKey=()=>Math.floor((G.day-1)/SEASON_LEN);
 const isFest=()=>dayInSeason()>=4&&dayInSeason()<=5;
 const modOn=k=>!!(G&&G.mods&&G.mods[k]&&G.mods[k]>=G.day);
 const infestAt=k=>!!(G&&G.mods&&G.mods.infest&&G.mods.infest.loc===k&&G.mods.infest.until>=G.day);
-function news(t){G.news=G.news||[];G.news.unshift({d:G.day,t});G.news.length=Math.min(G.news.length,8);}
+function news(t){G.news=G.news||[];G.newsN=(G.newsN||0)+1;G.news.unshift({d:G.day,t});G.news.length=Math.min(G.news.length,8);}
 const CORB_SWAP={body:"#2a2230",armor:"#4a4458",plume:"#7a3aa0",cape:"#3a1a4a",headColor:"#4a4458",shieldColor:"#4a2a5a"};
 function rival(){if(!CHR.rival){CHR.rival={gen:1,heir:"Ysmaël",g:"m"};saveChr();}if(!G.rival)G.rival={honor:Math.min(25,3+4*CHR.lineages.length),beaten:0,met:false,allied:false,challenge:0};return G.rival;}
 const RIVAL_BRAGS=["{n} a remporté trois duels à l’arène et s’en vante dans toute la taverne.","Les Corbeval ont offert une cloche neuve au temple : le village les acclame.","{n} raconte à qui veut l’entendre que ta lignée ne finira jamais rien.","Les Corbeval ont escorté une caravane jusqu’au marais sans perdre un seul chariot.","On dit que {n} s’entraîne chaque nuit, à la lueur des torches."];
@@ -1154,6 +1198,7 @@ function birth(adopt){
     if((G.flags.boss_ignarath||G.flags.boss_ignara||G.choices.dragon==="pact")&&k.traits.length<2)k.traits.push("cendre");}
   const h=hero();if(adopt){mem(k,`Recueilli${ef(k)} au temple de Valbrume par ${h.name}.`);mem(h,`Recueille ${name} au temple.`);growKid(k,40,true);}
   else{mem(k,`Naît au foyer ${deN(h.name)}${G.partner?` et ${G.partner.name}`:""}.`);mem(h,`Naissance ${deN(name)}.`);}
+  if(G.family.gen===1&&kids().length===1&&h.lvl<8)news("🍀 Désormais, tu ne te bats plus seulement pour toi : une défaite pourra te coûter la vie.");
   G.tries=0;toast(adopt?`🏠 ${name} rejoint la famille.`:`👶 ${name} vient de naître !`);return k;
 }
 function birthChance(){const a=hero().age||25;if(a>=50)return 0;let p=.2+.1*(G.tries||0);if(a>=35)p-=.05;if(a>=40)p-=.08;if(bld("temple"))p+=.05;if(seasonIdx()===0)p+=.1;return Math.max(.05,Math.min(.7,p));}
@@ -1179,7 +1224,10 @@ async function foyer(){
 
 /* ---------- Interface ---------- */
 let toastT;
-function toast(t){const el=$("#toast");el.textContent=t;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove("show"),2400);}
+const toastQ=[];let toastOn=false;
+function toast(t){if(toastQ[toastQ.length-1]===t)return;toastQ.push(t);if(toastQ.length>4)toastQ.shift();if(!toastOn)nextToast();}
+function nextToast(){const el=$("#toast");if(!toastQ.length){toastOn=false;return;}toastOn=true;el.classList.toggle("top",!!C);el.textContent=toastQ.shift();el.classList.add("show");clearTimeout(toastT);
+  toastT=setTimeout(()=>{el.classList.remove("show");setTimeout(nextToast,260);},toastQ.length?1900:2600);}
 function modal(html,buttons=[],opts={}){
   return new Promise(res=>{
     const p=$("#mpanel");
@@ -1228,7 +1276,8 @@ function renderMap(){
   const un=Object.keys(LOCS).filter(isUnlocked);let h="";const drawn=new Set();
   const route=selLoc?pathTo(selLoc):null;const rset=new Set();
   if(route){let a=G.loc;for(const b of route){rset.add([a,b].sort().join("-"));a=b;}}
-  for(const k of un)for(const l of LOCS[k].links)if(isUnlocked(l)){const key=[k,l].sort().join("-");if(drawn.has(key))continue;drawn.add(key);const a=LOCS[k],b=LOCS[l];h+=`<line class="path${rset.has(key)?" route":""}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;}
+  const gset=new Set(),gl=goalLoc();if(!route&&gl&&gl!==G.loc&&isUnlocked(gl)){const gr=pathTo(gl);if(gr){let a=G.loc;for(const b of gr){gset.add([a,b].sort().join("-"));a=b;}}}
+  for(const k of un)for(const l of LOCS[k].links)if(isUnlocked(l)){const key=[k,l].sort().join("-");if(drawn.has(key))continue;drawn.add(key);const a=LOCS[k],b=LOCS[l];h+=`<line class="path${rset.has(key)?" route":gset.has(key)?" goalr":""}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;}
   const goal=goalLoc(),nl=nemLoc();
   for(const k of un){const L=LOCS[k];
     h+=`<g class="node${k===G.loc?" cur":""}${k===selLoc?" sel":""}" data-loc="${k}" tabindex="0" role="button" aria-label="${esc(L.n)}">
@@ -1241,24 +1290,36 @@ function renderMap(){
   $("#map").innerHTML=h;
   const tb=$("#tbar");
   if(selLoc&&route){const L=LOCS[selLoc];
-    tb.innerHTML=`${img(selLoc,null,32)}<div class="tt"><b>${esc(L.n)}</b><br><span class="muted">${route.length} jour${route.length>1?"s":""} de marche${infestAt(selLoc)?" · 🔥 bêtes agitées":""}</span></div><button class="btn small primary" id="go-travel">Partir</button><button class="btn small" id="no-travel" aria-label="Annuler">✕</button>`;
+    const info=[selLoc===goalLoc()?"❗ objectif":"",questMarker(selLoc)?"? quête":"",CHR.legends.some(l=>!l.slain&&l.loc===selLoc)||CHR.souls.some(x=>!x.freed&&x.loc===selLoc)?"☠️ légende":"",infestAt(selLoc)?"🔥 bêtes agitées":"",FRAGS[selLoc]&&!(CHR.fragments||{})[selLoc]?"📜 secret":""].filter(Boolean);
+    tb.innerHTML=`${img(selLoc,null,32)}<div class="tt"><b>${esc(L.n)}</b><br><span class="muted">${route.length} jour${route.length>1?"s":""} de marche${info.length?" · "+info.join(" · "):""}</span></div><button class="btn small primary" id="go-travel">Partir</button><button class="btn small" id="no-travel" aria-label="Annuler">✕</button>`;
     tb.hidden=false;
   }else tb.hidden=true;
 }
 function renderStrip(){
-  $("#strip").innerHTML=partyChars().map(c=>{const s=charStats(c);return `<div class="chip">${charImg(c,28)}<div style="flex:1;min-width:0"><div class="cn">${esc(c.name)}</div><div class="bar"><i style="width:${c.hp/s.hp*100}%"></i></div><div class="hp-txt">${c.hp} / ${s.hp} PV</div></div></div>`;}).join("");
+  const ps=partyChars();
+  $("#strip").innerHTML=ps.map(c=>{const s=charStats(c),hp=Math.min(c.hp,s.hp),hurt=hp<s.hp;return `<div class="chip" data-pot="${c.id}" role="button" aria-label="${esc(c.name)}${hurt&&G.potions?", donner une potion":""}">${charImg(c,28)}<div style="flex:1;min-width:0"><div class="cn">${esc(c.name)}${c.injury>G.day?" 🩹":""}${hurt&&G.potions?'<span class="potk">🧪</span>':""}</div><div class="bar${hp<s.hp*.3?" low":""}"><i style="width:${hp/s.hp*100}%"></i></div><div class="hp-txt">${hp} / ${s.hp} PV</div></div></div>`;}).join("");
+  if(!tipSeen("potion")&&G.potions&&ps.some(c=>c.hp<charStats(c).hp*.6)){markTip("potion");setTimeout(()=>toast("💡 Touche un personnage blessé pour lui donner une potion."),600);}
 }
+const nb=k=>CHR.seen&&CHR.seen[k]?"":'<span class="newb">nouveau</span>';
+const PLACE_INTRO={
+  forge:{who:"Hilda, la forgeronne",sp:"villager",sw:{body:"#7a3a1e",hair:"#2e1c0e",hairStyle:"long",beard:null},t:"« Une lame émoussée, c’est un enterrement qui attend. Apporte-moi de l’or et je renforce tes armes et tes armures. Plus le village grandit, plus mon métal est noble. »"},
+  tavern:{who:"Gros-Louis, le tavernier",sp:"villager",sw:{body:"#8a5a2a",beard:"#5a3a1a",hair:"#5a3a1a"},t:"« Tu cherches du monde pour t’accompagner ? Ici, les lames se louent au contrat, vingt jours, chacune avec son savoir-faire. Les vrais amis, eux, ne s’achètent pas : ils se gagnent en rendant service aux gens de la vallée. »"},
+  arena:{who:"Maître Aubert",sp:"guerrier",sw:{body:"#7a2a2a",plume:"#f0c03a"},t:"« Bienvenue dans l’arène ! Ici, personne ne meurt. On parie sur les duels, on s’entraîne pour gagner de l’expérience, et les plus braves tentent le tournoi. »"},
+  cemetery:{who:"Le vieux fossoyeur",sp:"villager",sw:{body:"#4a4a4a",beard:"#cfcfcf",hair:"#cfcfcf"},t:"« Ici reposent ceux qui t’ont précédé. Prends le temps de te recueillir : on dit que les morts veillent sur ceux qui se souviennent d’eux. »"},
+  build:{who:"Maître Anselin, bâtisseur",sp:"villager",sw:{body:"#5a6a3a",hair:"#8a6a3a"},t:"« Valbrume a besoin de murs, d’ateliers, d’un temple. Finance un chantier et ton nom sera gravé sur la plaque. Ce qu’on bâtit reste, même après toi… si le temps l’épargne. »"}};
+async function placeIntro(a){if(!PLACE_INTRO[a]||(CHR.seen&&CHR.seen[a]))return;const P=PLACE_INTRO[a];CHR.seen=CHR.seen||{};CHR.seen[a]=1;saveChr();
+  await modal(`<div class="intro">${img(P.sp,P.sw,56)}<h3 style="margin:0">${esc(P.who)}</h3></div><p class="dlg">${esc(P.t)}</p>`,[{l:"Continuer",cls:"primary"}],{dismiss:false});renderLoc();}
 function renderLoc(){
   const k=G.loc,L=LOCS[k];let acts="";
   if(L.safe){
     acts+=`<button class="btn wide" data-a="elder">🧓 Parler à l’Ancien</button>
       <button class="btn" data-a="rest">🛏️ Auberge<br><small>Soins complets · ${restPrice()} 🪙</small></button>
       <button class="btn" data-a="shop">🧪 Potion<br><small>${potionPrice()} 🪙</small></button>
-      <button class="btn" data-a="forge">⚒️ Forge</button>
-      <button class="btn" data-a="tavern">🍺 Taverne</button>
-      <button class="btn" data-a="arena">🏟️ Arène</button>
-      <button class="btn" data-a="cemetery">⚱️ Cimetière</button>
-      <button class="btn" data-a="build">🏗️ Chantiers</button>
+      <button class="btn" data-a="forge">⚒️ Forge<br><small>armes et armures</small>${nb("forge")}</button>
+      <button class="btn" data-a="tavern">🍺 Taverne<br><small>lames à louer</small>${nb("tavern")}</button>
+      <button class="btn" data-a="arena">🏟️ Arène<br><small>paris, duels, tournoi</small>${nb("arena")}</button>
+      <button class="btn" data-a="cemetery">⚱️ Cimetière<br><small>tombes et mémoire</small>${nb("cemetery")}</button>
+      <button class="btn" data-a="build">🏗️ Chantiers<br><small>bâtir le village</small>${nb("build")}</button>
       ${isFest()&&!G.fest[festKey()]?`<button class="btn primary wide" data-a="fest">${season().fest.ic} ${season().fest.n}<br><small>La fête bat son plein</small></button>`:""}
       <button class="btn wide" data-a="home">🏠 Foyer${!G.married&&G.ch>=1?"<br><small>fonder une famille</small>":""}</button>`;
   }else{
@@ -1285,6 +1346,7 @@ function renderFamily(){
     <div class="bar xp"><i style="width:${h.xp/xpNeed(h.lvl)*100}%"></i></div><div class="hp-txt">${h.xp} / ${xpNeed(h.lvl)} XP</div>
     <div class="pc">${HC.w} ${TIERS[h.wT].n} · ${HC.a} ${TIERS[h.aT].n}</div>
     <div class="pc"><span class="pos">+ ${HC.pro}</span><br><span class="neg">− ${HC.con}</span></div>
+    ${graceOn()?`<div class="tip">🍀 Grâce du fondateur : hors boss, une défaite ne peut pas te tuer. Elle s’achève à la naissance de ton premier enfant ou au niveau 8.</div>`:""}${h.injury>G.day?`<div class="tip">🩹 Blessé${ef(h)} : −20 % de PV jusqu’au jour ${h.injury}.</div>`:""}
     ${skillList(h)}
     <div class="btns"><button class="btn small" data-f="mem" data-id="${h.id}">📖 Carnet</button><button class="btn small" data-f="rename" data-id="${h.id}">✏️ Renommer</button>${h.age>=40?`<button class="btn small" data-f="retire" data-id="${h.id}" ${kids().some(x=>x.cls)?"":"disabled"}>🪑 Prendre sa retraite</button>`:""}</div>
     ${h.age>=40&&!kids().some(x=>x.cls)?'<div class="hp-txt">Il faut un enfant adulte pour passer le flambeau.</div>':h.age<40?`<div class="hp-txt">La retraite sera possible à 40 ans.</div>`:""}</div>`;
@@ -1361,7 +1423,14 @@ function renderJournal(){
   html+=`<h2>Partie</h2><div class="btns" style="flex-direction:column"><button class="btn" data-j="famname">✏️ Renommer la lignée</button><button class="btn danger" data-j="reset">Abandonner et fonder une nouvelle lignée</button><button class="btn danger" data-j="wipe">Effacer les chroniques</button></div>`;
   $("#journal").innerHTML=html;
 }
-function renderAll(){if(!hero())return;applyLocs();renderTop();renderGoal();renderMap();renderStrip();renderLoc();
+function badges(){
+  const v=G.loc==="village",H=hero();
+  const fam=kids().some(k=>!k.cls&&k.grow>=100)||(v&&kids().some(k=>k.cls&&k.lvl<H.lvl-1&&k.trainDay!==G.day&&G.gold>=trainPrice(k)))||(v&&kids().some(k=>!k.cls&&k.grow<100&&k.timeDay!==G.day))||mercs().some(m=>m.until-G.day<=3);
+  const jr=(G.newsN||0)>(G.newsSeenN||0)||!!(G.rival&&G.rival.challenge&&!G.rival.allied);
+  document.querySelector('.tabs [data-tab="family"]').classList.toggle("dot",fam&&!$("#tab-family").classList.contains("active"));
+  document.querySelector('.tabs [data-tab="journal"]').classList.toggle("dot",jr&&!$("#tab-journal").classList.contains("active"));
+}
+function renderAll(){if(!hero())return;applyLocs();renderTop();renderGoal();renderMap();renderStrip();renderLoc();badges();
   if($("#tab-family").classList.contains("active"))renderFamily();
   if($("#tab-journal").classList.contains("active"))renderJournal();}
 
@@ -1369,15 +1438,15 @@ function renderAll(){if(!hero())return;applyLocs();renderTop();renderGoal();rend
 let traveling=false;
 /* Rencontres adaptatives : le niveau des ennemis suit le groupe.
    Tirage de la difficulté visée : facile 20 %, équilibré 60 %, difficile 17 %, mortel 3 %. */
-const TIER_W=[[.2,.95],[.6,.76],[.17,.47],[.03,.2]];
+const TIER_W=[[.2,.99],[.6,.92],[.17,.74],[.03,.42]];
 function pickTarget(){let r=Math.random();for(const [w,t] of TIER_W)if((r-=w)<0)return t;return .76;}
 function foes(pool,n,mod={},target){
   if(target===undefined)target=pickTarget();
   const H=hero().lvl,party=partyChars().map(c=>({...c,hp:charStats(c).hp}));
-  const L=Math.max(1,H+(target>.9?-1:target>.6?0:target>.3?1:2));
+  const L=Math.max(1,H+(target>.95?-1:target>.8?0:target>.55?1:2));
   const tpls=Array.from({length:n},()=>pick(pool));
   const build=(k,m)=>tpls.slice(0,m).map((t,i)=>{const e=makeEnemy(t,Math.max(1,L-(m>2&&i===m-1?1:0)),mod);e.hp=Math.max(4,Math.round(e.hp*Math.pow(k,0.4)));e.atk=Math.max(1,Math.round(e.atk*Math.pow(k,1)));e.def=Math.round(e.def*Math.pow(k,.3));return e;});
-  const p=(en,N=120)=>{let w=0;for(let i=0;i<N;i++)if(simBattle(en,party,i%2))w++;return w/N;};
+  const p=(en,N=120)=>{let w=0;for(let i=0;i<N;i++)if(simBattle(en,party,i%3!==0))w++;return w/N;};
   let m=n;while(m>1&&p(build(.35,m))<target)m--;
   let a=Math.log(.25),b=Math.log(12);
   for(let i=0;i<9;i++){const k=(a+b)/2;if(p(build(Math.exp(k),m),i<5?100:200)>=target)a=k;else b=k;}
@@ -1420,10 +1489,11 @@ async function runEvent(ev,L){
 /* ---------- Actions ---------- */
 async function locAction(a){
   if(traveling)return;
+  await placeIntro(a);
   if(a==="elder"){
     const first=!G.flags.elder1;G.flags.elder1=true;
     if(G.ch<CHAPTERS.length){const cs=curStep(),nx=(cs.k==="flag"&&cs.v==="elder1"&&chap(G.ch).steps[G.step+1])||cs;const goal=elderLine(nx);
-      await story("L’Ancien de Valbrume",(G.ch===0&&first?txt(chap(0).intro).concat([goal]):[goal]).concat(rumors()));}
+      await story("L’Ancien de Valbrume",(G.ch===0&&first?txt(chap(0).intro).concat([goal]):[goal]).concat(elderNudge()).concat(rumors()));}
     else await story("L’Ancien de Valbrume",["« La vallée respire enfin. Repose-toi, entraîne tes enfants. D’autres menaces viendront, elles viennent toujours. »"].concat(rumors()));
     checkProgress();
   }else if(a==="rest"){if(G.gold<restPrice())return toast("Pas assez d’or.");G.gold-=restPrice();healParty(1);passDays(1);save();toast("Le groupe est entièrement soigné.");renderAll();checkProgress();}
@@ -1504,15 +1574,18 @@ function makeChampion(id,lvl){const c=CHAMPS[id];return {...makeEnemy(c.tpl,lvl|
 /* ---------- Moteur de combat (partagé par l’estimation et le vrai combat) ---------- */
 function resMult(tags,type){let m=1;if(type==="phys"&&tags.includes("phys"))m*=2/3;if(type==="magie"&&tags.includes("magie"))m*=2/3;if(type==="lumiere"&&tags.includes("lumiere"))m*=1.5;return m;}
 const eRes=(e,t)=>e.broken&&t!=="lumiere"?1:resMult(e.tags,t);
-const FX0={act(){},hit(){},heal(){},log(){},foeHit(){},riposte(){}};
+const FX0={act(){},hit(){},heal(){},log(){},foeHit(){},riposte(){},miss(){}};
+const DODGERS=["loup","araignee","follet"];
 function mkAlly(c){const s=charStats(c);return{ref:c,n:c.name,cls:c.cls,hp:Math.max(1,Math.min(c.hp,s.hp)),max:s.hp,atk:s.atk,def:s.def,dmg:CLASSES[c.cls].dmg,sk:skillsOf(c),cds:{},taunt:c.perk==="garde"?1:0,riposte:0,bless:0,vif:hasT(c,"vif"),hero:c.id===G.heroId};}
-const mkFoe=e=>({...e,max:e.hp,stun:0,broken:false});
+const mkFoe=e=>({...e,max:e.hp,stun:0,broken:false,dodge:DODGERS.includes(e.tpl)});
 const alive=l=>l.filter(x=>x.hp>0);
 const ready=(a,id)=>a.sk.includes(id)&&!(a.cds[id]>0);
 function strike(S,a,e,mult,o={}){
-  if(!e||e.hp<=0)return 0;const r=eRes(e,a.dmg);
-  const raw=(a.atk*mult+(o.bonus||0))*r*(a.bless>0?1.3:1)-(e.broken?e.def*.2:e.def*.5);
-  const d=Math.max(1,Math.round(raw*rnd(.9,1.1)));e.hp=Math.max(0,e.hp-d);S.fx.hit(a,e,d,{big:mult>1,r,quiet:o.quiet,sk:o.sk});return d;
+  if(!e||e.hp<=0)return 0;
+  if(e.dodge&&Math.random()<.05){S.fx.miss(a,e,o);return 0;}
+  const r=eRes(e,a.dmg),cr=Math.random()<1/15;
+  const raw=(a.atk*mult+(o.bonus||0))*r*(a.bless>0?1.3:1)*(cr?1.5:1)-(e.broken?e.def*.2:e.def*.5);
+  const d=Math.max(1,Math.round(raw*rnd(.8,1.2)));e.hp=Math.max(0,e.hp-d);S.fx.hit(a,e,d,{big:mult>1.2,crit:cr,r,quiet:o.quiet,sk:o.sk});return d;
 }
 function bestTarget(S,a){const f=alive(S.enemies);f.sort((x,y)=>eRes(y,a.dmg)-eRes(x,a.dmg)||x.hp-y.hp);return f[0];}
 function doSkill(S,a,id,t){
@@ -1520,18 +1593,18 @@ function doSkill(S,a,id,t){
   const foes=alive(S.enemies),pals=alive(S.allies);
   const aoe=m=>{const ds=foes.map(e=>strike(S,a,e,m,{quiet:1}));S.fx.log(`${a.n} · ${k.n} : ${ds.join(", ")} dégâts.`);};
   switch(id){
-    case"frappe":strike(S,a,t,2.2,{sk:k.n});break;
+    case"frappe":strike(S,a,t,2,{sk:k.n});break;
     case"tourbillon":aoe(1);break;
     case"brise":if(t&&!t.broken){t.broken=true;S.fx.log(`Les défenses de ${t.n} volent en éclats !`);}strike(S,a,t,1.6,{sk:k.n});break;
-    case"feu":aoe(1.2);break;
-    case"eclair":strike(S,a,t,2.6,{sk:k.n});break;
+    case"feu":aoe(1.1);break;
+    case"eclair":strike(S,a,t,2.3,{sk:k.n});break;
     case"gel":{aoe(.7);const fr=foes.filter(e=>e.hp>0&&!e.big);fr.forEach(e=>e.stun=1);if(fr.length)S.fx.log(fr.length>1?`${fr.length} ennemis sont gelés pour un tour.`:`${fr[0].n} est gelé pour un tour.`);break;}
     case"provoc":a.taunt=2;S.fx.log(`${a.n} provoque les ennemis et lève son bouclier.`);break;
     case"bouclier":strike(S,a,t,1.2,{sk:k.n,bonus:a.def});if(t&&t.hp>0&&!t.big){t.stun=1;S.fx.log(`${t.n} est étourdi.`);}break;
     case"rempart":S.wall=2;S.fx.log(`${a.n} dresse un rempart : le groupe encaisse moitié moins.`);break;
     case"riposte":a.riposte=2;S.fx.log(`${a.n} se met en garde : chaque coup reçu sera rendu.`);break;
     case"soin":for(const x of pals){const v=Math.max(8,Math.round(x.max*.3));x.hp=Math.min(x.max,x.hp+v);S.fx.heal(x,v);}S.fx.log(`${a.n} soigne le groupe.`);break;
-    case"lumiere":{const d=strike(S,a,t,1.8,{sk:k.n});const v=Math.round(d*.3);if(v>0&&a.hp>0){a.hp=Math.min(a.max,a.hp+v);S.fx.heal(a,v);}break;}
+    case"lumiere":{const d=strike(S,a,t,1.7,{sk:k.n});const v=Math.round(d*.3);if(v>0&&a.hp>0){a.hp=Math.min(a.max,a.hp+v);S.fx.heal(a,v);}break;}
     case"relever":{const down=S.allies.find(x=>x.hp<=0);
       if(down){down.hp=Math.round(down.max*.5);S.fx.heal(down,down.hp);S.fx.log(`${down.n} se relève !`);}
       else{const x=pals.sort((p,q)=>p.hp/p.max-q.hp/q.max)[0];const v=Math.round(x.max*.3);x.hp=Math.min(x.max,x.hp+v);S.fx.heal(x,v);S.fx.log(`${a.n} soigne ${x.n} : +${v} PV.`);}break;}
@@ -1562,12 +1635,12 @@ function aiPick(S,a){
   }
   return["atk",T];
 }
-function act(S,a,[id,t]){S.fx.act(a);if(id==="atk")strike(S,a,t,1);else doSkill(S,a,id,t);}
+function act(S,a,[id,t]){S.fx.act(a);if(id==="atk")strike(S,a,t,1.15);else doSkill(S,a,id,t);}
 function foeAct(S,e){
   const al=alive(S.allies);if(!al.length||e.hp<=0)return;
   let t=al.find(a=>a.taunt>0);if(!t){const pool=[];for(const a of al){pool.push(a);if(a.cls==="gardien")pool.push(a);}t=pick(pool);}
-  const d=Math.max(1,Math.round((e.atk-t.def*.5)*rnd(.9,1.1)*(t.taunt>0?.6:1)*(S.wall>0?.5:1)));
-  t.hp=Math.max(0,t.hp-d);S.fx.foeHit(e,t,d);if(t.hero&&t.hp<=0)S.killer=e;
+  const cr=Math.random()<.05,d=Math.max(1,Math.round((e.atk*(cr?1.5:1)-t.def*.5)*rnd(.8,1.2)*(t.taunt>0?.6:1)*(S.wall>0?.5:1)));
+  t.hp=Math.max(0,t.hp-d);S.fx.foeHit(e,t,d,cr);if(t.hero&&t.hp<=0)S.killer=e;
   if(t.riposte>0&&e.hp>0){const r=Math.max(1,Math.round(d*.7));e.hp=Math.max(0,e.hp-r);S.fx.riposte(t,e,r);}
 }
 const foeHits=e=>e.tags.includes("double")?2:1;
@@ -1584,8 +1657,8 @@ function simBattle(en,party,plain){
 }
 function winRate(en,n=250){let w=0;for(let i=0;i<n;i++)if(simBattle(en))w++;return w/n;}
 function difficulty(en){
-  let w=0;for(let i=0;i<300;i++)if(simBattle(en,null,i%2))w++;const p=w/300;
-  return p>=.9?["Facile","pos",p]:p>=.6?["Équilibré","",p]:p>=.3?["Difficile","warn",p]:["Mortel","neg",p];
+  let w=0;for(let i=0;i<300;i++)if(simBattle(en,null,i%3!==0))w++;const p=w/300;
+  return p>=.97?["Facile","pos",p]:p>=.85?["Équilibré","",p]:p>=.6?["Difficile","warn",p]:["Mortel","neg",p];
 }
 function foeList(en){return en.map(e=>`<div class="foe">${img(e.sp,e.swap,40)}<div><b>${esc(e.n)}</b> <span class="muted">${e.kind?esc(e.kind).toLowerCase()+", ":""}niv. ${e.lvl}</span>${e.tags.map(t=>`<div class="tg">${tagTxt(t)}</div>`).join("")}</div></div>`).join("");}
 const TYPE_WHO={phys:"un guerrier ou un gardien",magie:"un mage",lumiere:"un clerc"};
@@ -1598,11 +1671,14 @@ function advice(en){
   if(mate)return `<div class="tip">💡 Tes coups porteront moins ici, mais ${esc(mate.name)} (${CLASSES[mate.cls].n.toLowerCase()}) sera efficace.</div>`;
   const w=TYPE_WHO[best];return `<div class="tip">💡 ${w.charAt(0).toUpperCase()+w.slice(1)} serait plus efficace ici.</div>`;
 }
+function gauge(d,extra=""){const p=d[2],n=Math.max(1,Math.min(10,Math.round(p*10)));
+  return `<div class="gauge"><div class="gl"><span class="${d[1]}">${d[0]}${extra}</span><span>${p>=.97?"presque sans risque":`≈ ${n} chance${n>1?"s":""} sur 10`}</span></div><div class="gb"><i class="${d[1]}" style="width:${Math.max(4,p*100)}%"></i></div></div>`;}
 async function preview(title,text,en,ctx,mode="normal"){
-  const [dl,dc]=difficulty(en);
+  const boss=ctx.type==="boss",d=boss?null:difficulty(en);if(d)ctx.est=d[0];
+  if(mode==="ambush"&&!tipSeen("ambush")){markTip("ambush");text+=`<br><span class="muted">💡 Fuir coûte de l’or, mais vaut mieux qu’une défaite.</span>`;}
   const btns=mode==="ambush"?[{l:"⚔️ Combattre",cls:"primary",v:"fight"},{l:`🏃 Fuir (−20 % d’or)`,v:"flee"}]
     :[{l:"⚔️ Combattre",cls:"primary",v:"fight"},{l:mode==="boss"?"Pas maintenant":"S’éloigner discrètement",v:"avoid"}];
-  const go=await modal(`<h3>${esc(title)}</h3><p>${text}</p>${foeList(en)}${advice(en)}<div class="diff">Estimation : <span class="${dc}">${dl}</span></div>`,btns,{dismiss:false});
+  const go=await modal(`<h3>${esc(title)}</h3><p>${text}</p>${foeList(en)}${boss?`<p class="muted" style="margin-top:10px">Impossible de savoir comment tournera ce combat. Fie-toi aux conseils de l’Ancien.</p>`:advice(en)+gauge(d)}`,btns,{dismiss:false});
   if(go==="fight")return startCombat(en,ctx);
   if(go==="flee"){const v=Math.floor(G.gold*.2);G.gold-=v;save();renderAll();toast(`Tu t’échappes${v?` en semant ${v} 🪙`:""}.`);return"flee";}
   return"avoid";
@@ -1733,7 +1809,7 @@ function tuneTeam(en,target){
 }
 async function arenaPrompt(en,title,desc){
   const [dl,dc,pw]=difficulty(en),od=oddsFor(Math.min(.94,Math.max(.06,pw)));
-  const {v,bet}=await betModal(`<h3>${esc(title)}</h3><p class="muted">${desc}</p>${foeList(en)}${advice(en)}<div class="diff">Estimation : <span class="${dc}">${dl}</span> · cote ${fmtOdds(od)}</div><p class="pc">Miser sur ta propre victoire ? (mise max ${maxBet()} 🪙)</p>${betChips(true)}`,
+  const {v,bet}=await betModal(`<h3>${esc(title)}</h3><p class="muted">${desc}</p>${foeList(en)}${advice(en)}${gauge([dl,dc,pw],` · cote ${fmtOdds(od)}`)}<p class="pc">Miser sur ta propre victoire ? (mise max ${maxBet()} 🪙)</p>${betChips(true)}`,
     [{l:"⚔️ Combattre",cls:"primary",v:"go"},{l:"Annuler",v:null}]);
   return v==="go"?{bet,odds:od}:null;
 }
@@ -1750,7 +1826,7 @@ async function arena(){
   if(!v)return;
   if(v==="duel")return duel();
   if(v==="rival"){const R=CHR.rival,n=partyChars().length;const team=[makeEnemy("chevalier",L,{n:`${R.heir} Corbeval`,swap:CORB_SWAP,r:2}),...arenaTeam(n-1,L)];tuneTeam(team,.5);
-    const ok=await modal(`<h3>⚔️ ${esc(R.heir)} Corbeval</h3><p class="dlg">« Enfin ! Je commençais à croire que les ${esc(G.family.name)} avaient peur de moi. »</p>${foeList(team)}<div class="diff">Estimation : <span class="${difficulty(team)[1]}">${difficulty(team)[0]}</span></div>`,[{l:"⚔️ En garde !",cls:"primary",v:true},{l:"Pas aujourd’hui",v:false}],{dismiss:false});
+    const ok=await modal(`<h3>⚔️ ${esc(R.heir)} Corbeval</h3><p class="dlg">« Enfin ! Je commençais à croire que les ${esc(G.family.name)} avaient peur de moi. »</p>${foeList(team)}${gauge(difficulty(team))}`,[{l:"⚔️ En garde !",cls:"primary",v:true},{l:"Pas aujourd’hui",v:false}],{dismiss:false});
     if(!ok)return;const snap2={};for(const c of partyChars())snap2[c.id]=c.hp;
     await startCombat(team,{type:"arena",bg:ARENA_BG,rival:true,honor:3});for(const c of partyChars())if(snap2[c.id]!==undefined)c.hp=Math.max(snap2[c.id],Math.min(c.hp,charStats(c).hp));save();renderAll();return;}
   const snap={};for(const c of partyChars())snap[c.id]=c.hp;
@@ -1828,11 +1904,12 @@ async function duel(){
 let C=null;
 const FXUI={
   act(a){anim($("#al"+C.allies.indexOf(a)),"lunge");},
-  hit(a,e,d,o){const el=$("#en"+C.enemies.indexOf(e));anim(el,"hit");flo(el,"-"+d,o.big?"s":"d");
-    if(!o.quiet)clog(`${a.n}${o.sk?` · ${o.sk} sur `:" frappe "}${e.n} : ${d}${o.r<1?" (résiste)":o.r>1?" (efficace !)":""}${e.hp<=0?`. ${e.n} tombe.`:""}`);},
+  hit(a,e,d,o){const el=$("#en"+C.enemies.indexOf(e));anim(el,"hit");flo(el,"-"+d+(o.crit?" !":""),o.crit?"c":o.big?"s":"d");if(o.crit)shake();
+    if(!o.quiet||o.crit)clog(`${o.crit?"💥 Critique ! ":""}${a.n}${o.sk?` · ${o.sk} sur `:" frappe "}${e.n} : ${d}${o.r<1?" (résiste)":o.r>1?" (efficace !)":""}${e.hp<=0?`. ${e.n} tombe.`:""}`);},
+  miss(a,e){const el=$("#en"+C.enemies.indexOf(e));flo(el,"esquive","m");clog(`${e.n} esquive le coup de ${a.n} !`);},
   heal(x,v){flo($("#al"+C.allies.indexOf(x)),"+"+v,"h");},
   log(t){clog(t);},
-  foeHit(e,t,d){anim($("#en"+C.enemies.indexOf(e)),"lunge");const el=$("#al"+C.allies.indexOf(t));anim(el,"hit");flo(el,"-"+d,"d");clog(`${e.n} attaque ${t.n} : ${d}${t.hp<=0?`. ${t.n} est à terre !`:""}`);},
+  foeHit(e,t,d,cr){anim($("#en"+C.enemies.indexOf(e)),"lunge");const el=$("#al"+C.allies.indexOf(t));anim(el,"hit");flo(el,"-"+d+(cr?" !":""),cr?"c":"d");if(cr)shake();clog(`${cr?"💥 Coup critique ! ":""}${e.n} attaque ${t.n} : ${d}${t.hp<=0?`. ${t.n} est à terre !`:""}`);},
   riposte(t,e,r){const el=$("#en"+C.enemies.indexOf(e));anim(el,"hit");flo(el,"-"+r,"d");clog(`${t.n} riposte : ${r}${e.hp<=0?`. ${e.n} tombe.`:""}`);}
 };
 function startCombat(en,ctx){
@@ -1840,20 +1917,21 @@ function startCombat(en,ctx){
     C={ctx,res,round:1,sel:0,busy:false,log:[],killer:null,wall:0,fx:FXUI,enemies:en.map(mkFoe),allies:partyChars().map(mkAlly)};
     const bg=ctx.bg||LOCS[G.loc].bg;
     $("#scene").style.background=`linear-gradient(${bg[0]} 0 56%, ${bg[1]} 56% 100%)`;
-    $("#cb-en").innerHTML=C.enemies.map((e,i)=>`<button class="en" id="en${i}" data-i="${i}"><span class="spr">${img(e.sp,e.swap,e.big?96:64)}</span><span class="lab"><div class="enn">${esc(e.n)}</div><div class="hp-txt">niv. ${e.lvl}${e.tags.length?" · "+tagIcons(e.tags):""}</div><div class="bar en"><i></i></div><div class="est"></div></span></button>`).join("");
+    $("#cb-en").innerHTML=C.enemies.map((e,i)=>`<button class="en" id="en${i}" data-i="${i}"><span class="spr">${img(e.sp,e.swap,e.big?96:64)}</span><span class="lab"><div class="enn">${esc(e.n)}</div><div class="hp-txt">niv. ${e.lvl}${e.tags.length?" · "+tagIcons(e.tags):""}</div><div class="bar en"><i></i></div><div class="ehp"></div><div class="est"></div></span></button>`).join("");
     $("#cb-al").innerHTML=C.allies.map((a,i)=>`<div class="al" id="al${i}"><span class="spr">${charImg(a.ref,36)}</span><div style="flex:1;min-width:0"><div class="aln"><span>${esc(a.n)}</span><span class="st"></span></div><div class="bar"><i></i></div><div class="hp-txt"></div></div></div>`).join("");
     const h=C.allies.find(a=>a.hero);
     $("#cb-skills").style.gridTemplateColumns=`repeat(${Math.max(1,h.sk.length)},1fr)`;
-    $("#cb-skills").innerHTML=h.sk.map(id=>`<button class="skb" data-sk="${id}"><span class="ic">${SKILLS[id].ic}</span><span>${SKILLS[id].n}</span><span class="cd"></span></button>`).join("");
+    $("#cb-skills").innerHTML=h.sk.map(id=>`<button class="skb" data-sk="${id}" title="${esc(SKILLS[id].d)}"><span class="ic">${SKILLS[id].ic}</span><span>${SKILLS[id].n}</span><span class="cd"></span></button>`).join("");
     $("#cb-top").textContent=ctx.type==="arena"?`Arène de Valbrume${ctx.round?` · manche ${ctx.round}`:""}`:LOCS[G.loc].n;
     $("#a-auto").checked=!!G.auto;$("#cb-log").innerHTML="";
-    clog("Le combat commence !");
+    clog("Le combat commence !");if(!tipSeen("combat")){markTip("combat");clog("💡 Touche un ennemi pour le viser. Appui long sur une compétence pour la décrire.");}
     $("#combat").hidden=false;updCombat();
     if(G.auto)setTimeout(()=>{if(C&&!C.busy)round("auto");},700);
   });
 }
 function clog(t){C.log.unshift(t);C.log.length=Math.min(C.log.length,4);$("#cb-log").innerHTML=C.log.map(l=>`<li>${esc(l)}</li>`).join("");}
 function flo(el,t,cls){if(!el)return;const s=document.createElement("span");s.className="fl "+cls;s.textContent=t;el.appendChild(s);setTimeout(()=>s.remove(),1000);}
+function shake(){const s=$("#scene");s.classList.remove("shake");void s.offsetWidth;s.classList.add("shake");}
 function anim(el,cls){if(!el)return;const s=el.querySelector(".spr")||el;s.classList.remove(cls);void s.offsetWidth;s.classList.add(cls);}
 function allyState(a){
   if(a.hp<=0)return"À terre";
@@ -1866,13 +1944,14 @@ function updCombat(){
   if(!C)return;
   if(C.enemies[C.sel].hp<=0){const i=C.enemies.findIndex(e=>e.hp>0);if(i>=0)C.sel=i;}
   C.enemies.forEach((e,i)=>{const el=$("#en"+i);el.classList.toggle("ko",e.hp<=0);el.classList.toggle("sel",i===C.sel&&e.hp>0&&C.enemies.filter(x=>x.hp>0).length>1);el.querySelector(".bar i").style.width=(e.hp/e.max*100)+"%";
+    el.querySelector(".ehp").textContent=e.hp>0?`${e.hp} / ${e.max}`:"";
     el.querySelector(".est").textContent=e.hp<=0?"":[e.stun>0?"💫 Étourdi":"",e.broken?"🔨 Brisé":""].filter(Boolean).join(" · ");});
   C.allies.forEach((a,i)=>{const el=$("#al"+i);el.classList.toggle("ko",a.hp<=0);el.querySelector(".bar i").style.width=(a.hp/a.max*100)+"%";el.querySelector(".hp-txt").textContent=`${a.hp} / ${a.max} PV`;el.querySelector(".st").textContent=allyState(a);});
   const h=C.allies.find(a=>a.hero),alive=h.hp>0,b=C.busy;
   $("#a-atk").textContent=alive?"⚔️ Attaquer":"⏭️ Continuer";$("#a-atk").disabled=b;
   document.querySelectorAll("#cb-skills .skb").forEach(x=>{const id=x.dataset.sk,cd=h.cds[id]||0;x.disabled=b||!alive||cd>0;x.querySelector(".cd").textContent=cd>0?`⏳${cd}`:"";});
   $("#a-pot").textContent=`🧪 ${G.potions}`;$("#a-pot").disabled=b||!alive||G.potions<=0;
-  $("#a-flee").disabled=b;
+  $("#a-flee").disabled=b;$("#a-flee").classList.toggle("warnb",alive&&h.hp<h.max*.3);
 }
 function usePotion(){const t=C.allies.filter(x=>x.hp>0).sort((x,y)=>x.hp/x.max-y.hp/y.max)[0];G.potions--;const v=Math.round(t.max*(bld("temple")>=2?.7:.5));t.hp=Math.min(t.max,t.hp+v);flo($("#al"+C.allies.indexOf(t)),"+"+v,"h");clog(`Potion bue par ${t.n} : +${v} PV.`);}
 async function round(kind,sid){
@@ -1912,12 +1991,15 @@ async function endCombat(r){
       if(c.ctx.rival){const R=CHR.rival,r=rival();r.honor+=2;r.challenge=0;addHonor(-1);news(`${R.heir} Corbeval a battu ${hero().name} ${G.family.name} en duel.`);}
       save();renderAll();
       await modal(`<h3>Défaite</h3>${c.ctx.rival?`<p class="neg">${esc(CHR.rival.heir)} Corbeval lève les bras sous les vivats. Les Corbeval marquent un point, et ta lignée perd 1 honneur.</p>`:""}<p>Tu poses un genou à terre. Les soigneurs de l’arène t’aident à te relever sous les applaudissements polis du public.</p>${c.ctx.bet&&c.ctx.bet.bet?`<p class="neg">Ta mise de ${c.ctx.bet.bet} 🪙 est perdue.</p>`:""}`,[{l:"Continuer"}],{dismiss:false});return c.res("lose");}
+    if(c.ctx.type!=="boss"){const grace=graceOn(),risk=grace?0:Math.min(1,(DEATH_RISK[c.ctx.est]||.5)*(["legend","nemesis"].includes(c.ctx.type)?2:1));
+      if(Math.random()>=risk){await knockedOut(c,grace);return c.res("lose");}}
     await heroDeath(c);return c.res("lose");
   }
   const inf=!arena&&c.ctx.type==="wild"&&infestAt(G.loc);
   const xp=Math.round(c.enemies.reduce((s,e)=>s+e.xp,0)*(c.ctx.xpMul||1)*(hasPerk("conteur")?1.1:1)*(seasonIdx()===3?1.2:1)*(inf?1.5:1)),gold=Math.round(c.enemies.reduce((s,e)=>s+e.gold,0)*goldMul()*(inf?1.5:1));G.gold+=gold;
   const ups=[],extra=[];if(inf)extra.push("🔥 Les bêtes agitées rapportent davantage.");
-  for(const a of c.allies){const u=gainXp(a.ref,xp);if(u)ups.push(`${a.ref.name} passe niveau ${a.ref.lvl} !`);}
+  const xpRows=[];
+  for(const a of c.allies){const r=a.ref,b0=r.xp/xpNeed(r.lvl);const u=gainXp(r,xp);xpRows.push({n:r.name,from:u?0:b0,to:r.xp/xpNeed(r.lvl),lv:u?r.lvl:0});if(u)ups.push(`${r.name} passe niveau ${r.lvl} !`);}
   if(!arena)for(const e of c.enemies)for(const [k,s] of Object.entries(G.quests)){const g=QUESTS[k].goal;if(s.st==="active"&&g.k==="kill"&&g.tpl===e.tpl&&!e.champ)s.c++;}
   if(c.ctx.bet&&c.ctx.bet.bet>0){const g=Math.round(c.ctx.bet.bet*c.ctx.bet.odds);G.gold+=g;extra.push(`🎲 Pari gagné : +${g} 🪙 (mise ${c.ctx.bet.bet} 🪙).`);}
   if(c.ctx.honor){addHonor(c.ctx.honor);extra.push(`🏅 +${c.ctx.honor} honneur pour ce combat.`);}
@@ -1939,11 +2021,13 @@ async function endCombat(r){
     if(b1>b0){const line=COMPS[r.key]?COMPS[r.key].bond[b1-1]:"";r.hp=charStats(r).hp;extra.push(`💛 ${r.name} devient ${b1===3?"inséparable":bondName(r).toLowerCase()} ${deN(hero().name)} : « ${line} »`);mem(r,`Devient ${bondName(r).toLowerCase()} ${deN(hero().name)}.`);mem(hero(),`${r.name} : « ${line} »`);}}
   if(c.ctx.type==="soul"){const so=CHR.souls.find(x=>x.id===c.ctx.id);if(so&&!so.freed){so.freed=true;saveChr();for(const a of c.allies)mem(a.ref,`Libère l’âme ${deN(so.full)}.`);addHonor(4);deed(`Âme de ${so.full} libérée`);extra.push(`🕯️ L’âme de ${so.full} trouve enfin le repos. Avant de disparaître, elle murmure ton nom : +4 honneur.`);}}
   for(const a of c.allies)if(a.ref.hp<=0)a.ref.hp=Math.round(a.max*.3);
+  if(!arena){for(const a of c.allies)if(a.ref.hp>0){const m=charStats(a.ref).hp;a.ref.hp=Math.min(m,a.ref.hp+Math.round(m*ri(10,20)/100));}extra.push("💨 Le groupe reprend son souffle.");}
   if(hasPerk("herboriste")){healParty(.1);extra.push("🌿 Les herbes de ton herboriste soulagent le groupe.");}
   if(c.ctx.rival){const R=CHR.rival,r=rival();r.honor=Math.max(0,r.honor-2);r.beaten++;r.challenge=0;extra.push(`⚔️ ${R.heir} Corbeval mord la poussière devant tout Valbrume. Les Corbeval perdent de leur superbe.`);mem(hero(),`Bat ${R.heir} Corbeval en duel à l’arène.`);news(`${hero().name} ${G.family.name} a battu ${R.heir} Corbeval en duel.`);}
   save();renderAll();
   if(!(arena&&c.ctx.round&&c.ctx.round<3)||ups.length)
-    await modal(`<h3>Victoire !</h3><p>+${xp} XP pour chaque membre du groupe${gold?` · +${gold} 🪙`:""}</p>${ups.map(u=>`<p class="pos">⭐ ${esc(u)}</p>`).join("")}${extra.map(t=>`<p>${esc(t)}</p>`).join("")}`,[{l:"Continuer",cls:"primary"}],{dismiss:false});
+    {const pm=modal(`<h3>Victoire !</h3><p>+${xp} XP pour chaque membre du groupe${gold?` · +${gold} 🪙`:""}</p>${xpRows.map((x,i)=>`<div class="xpl"><span class="nmx">${esc(x.n)}</span><div class="bar"><i id="xpb${i}" style="width:${x.from*100}%"></i></div>${x.lv?`<span class="lvup">⬆️ niv. ${x.lv}</span>`:""}</div>`).join("")}${extra.map(t=>`<p>${esc(t)}</p>`).join("")}`,[{l:"Continuer",cls:"primary"}],{dismiss:false});
+      setTimeout(()=>xpRows.forEach((x,i)=>{const el=document.getElementById("xpb"+i);if(el)el.style.width=Math.max(2,x.to*100)+"%";}),120);await pm;}
   await announceSkills();
   c.res("win");
   if(!arena)checkProgress();
@@ -1957,6 +2041,19 @@ function endLineage(end,h){
   else if(nem&&!nem.boss&&nem.tpl&&EN[nem.tpl]){legend={id:rid(),n:nem.n,kind:nem.kind||EN[nem.tpl].n,tpl:nem.tpl,sp:nem.sp||EN[nem.tpl].sp,swap:nem.swap,lvl:nem.lvl+1,loc:nem.loc,victims:nem.victims.slice(),lineage:G.family.name,relic:h?`${CLASSES[h.cls].w.toLowerCase()==="épée"?"l’épée":"l’arme"} ${deN(h.name)}`:"une relique familiale",slain:false};CHR.legends.push(legend);}
   CHR.lineages.push({name:G.family.name,gens:G.family.gen,end,day:G.day,reached:G.ch<CHAPTERS.length?chap(G.ch).t:"Toutes les épreuves accomplies",deeds:G.deeds.slice()});
   saveChr();return legend;
+}
+const graceOn=()=>!!(G&&G.family&&G.family.gen===1&&kids().length===0&&hero()&&hero().lvl<8);
+const DEATH_RISK={"Facile":.1,"Équilibré":.25,"Difficile":.5,"Mortel":1};
+async function knockedOut(c,grace){
+  const h=hero(),k=c.killer||c.enemies.find(e=>e.hp>0)||c.enemies[0],mate=c.allies.find(a=>!a.hero&&a.hp>0),lost=Math.floor(G.gold*.25);
+  G.gold-=lost;G.loc="village";selLoc=null;passDays(2);h.injury=G.day+3;
+  for(const a of c.allies)a.ref.hp=Math.max(1,Math.round(charStats(a.ref).hp*.4));
+  mem(h,`Laissé${ef(h)} pour mort${ef(h)} face à ${k.n}, puis ramené${ef(h)} au village${mate?` par ${mate.n}`:""}.`);
+  save();renderAll();
+  await story("Laissé pour mort",[`${k.n} t’a terrassé${ef(h)}. Quand tu rouvres les yeux, tu es au village : ${mate?`${mate.n} t’a porté${ef(h)} jusqu’ici`:`des bergers t’ont trouvé${ef(h)} et ramené${ef(h)}`}.`,
+    `Deux jours ont passé.${lost?` Ta bourse est plus légère de ${lost} pièces.`:""} Tes blessures te font souffrir : −20 % de PV pendant 3 jours.`,
+    grace?"🍀 La chance des débutants veille encore sur toi… mais elle ne durera pas toujours.":"Tu as frôlé la mort. La prochaine fois, la chance pourrait tourner."]);
+  checkProgress();
 }
 async function heroDeath(c){
   const h=hero(),k=c.killer||c.enemies.find(e=>e.hp>0)||c.enemies[0];
@@ -2076,6 +2173,13 @@ async function newGame(){
   G.family.name=$("#fn").value.trim()||"Montclair";
   if(CHR.lineages.length&&CHR.rival){CHR.rival.gen++;const rg=Math.random()<.5?"m":"f";CHR.rival.heir=freshName(rg);CHR.rival.g=rg;saveChr();}
   const h=newChar($("#hn").value.trim()||"Aldric",cls,"hero");h.age=18;h.traits=[pick(GOOD_TRAITS)];h.hp=charStats(h).hp;G.chars[h.id]=h;G.heroId=h.id;mem(h,"Prend les armes pour défendre Valbrume.");
+  if(CHR.lineages.length){const last=CHR.lineages[CHR.lineages.length-1];
+    const v=await modal(`<h3>L’héritage des ${esc(last.name)}</h3><p>La lignée ${esc(last.name)} s’est éteinte, mais elle laisse quelque chose derrière elle. Que reçoit ta famille ?</p>`,
+      [{l:"💰 Le coffre familial<br><small>+80 🪙 et 2 potions</small>",v:0},{l:"⚔️ L’arme de l’ancêtre<br><small>Une arme de fer dès le départ</small>",v:1},{l:"🌟 Le sang des anciens<br><small>Un second trait positif</small>",v:2}],{dismiss:false});
+    if(v===0){G.gold+=80;G.potions+=2;mem(h,`Hérite du coffre de la lignée ${last.name}.`);}
+    else if(v===1){h.wT=Math.max(h.wT,1);mem(h,`Hérite de l’arme de la lignée ${last.name}.`);}
+    else{const t=pick(GOOD_TRAITS.filter(x=>!h.traits.includes(x)));h.traits.push(t);mem(h,`Porte dans le sang l’héritage de la lignée ${last.name} (${TRAITS[t].n}).`);}
+    h.hp=charStats(h).hp;}
   save();renderAll();await story(chap(0).t,txt(chap(0).prologue));
   const tale=veillee(ruinVillage());
   if(tale.length)await story("Ce que l’on raconte à la veillée",tale);
@@ -2084,7 +2188,7 @@ async function newGame(){
 function showTab(t){
   document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("active",s.id==="tab-"+t));
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
-  if(t==="family")renderFamily();if(t==="journal")renderJournal();$("main").scrollTop=0;
+  if(t==="family")renderFamily();if(t==="journal"){G.newsSeenN=G.newsN||0;renderJournal();}$("main").scrollTop=0;if(G&&hero())badges();
 }
 function mapTap(k){
   if(traveling)return;
@@ -2134,9 +2238,17 @@ $("#journal").addEventListener("click",async e=>{
   if(b.dataset.j==="wipe"){const ok=await modal(`<p>Effacer les chroniques de Valbrume ? Les lignées passées, les légendes, les tombes et l’état du monde seront oubliés. Ta partie en cours n’est pas touchée, mais les prochaines lignées repartiront d’un monde neuf.</p>`,[{l:"Effacer les chroniques",cls:"danger",v:true},{l:"Annuler",v:false}]);
     if(ok){CHR=freshChr();saveChr();renderAll();renderJournal();toast("Les chroniques ont été effacées.");}}
 });
-$("#cb-en").addEventListener("click",e=>{const b=e.target.closest(".en");if(!b||!C)return;const i=+b.dataset.i;if(C.enemies[i].hp>0){C.sel=i;updCombat();}});
+$("#strip").addEventListener("click",e=>{const b=e.target.closest("[data-pot]");if(!b||traveling)return;const c=G.chars[b.dataset.pot];if(!c)return;const m=charStats(c).hp;
+  if(c.hp>=m)return toast(`${c.name} est en pleine forme.`);if(G.potions<=0)return toast("Plus de potion. Il y en a au village.");
+  G.potions--;const v=Math.round(m*(bld("temple")>=2?.7:.5));c.hp=Math.min(m,c.hp+v);save();renderAll();toast(`🧪 ${c.name} boit une potion : +${v} PV.`);});
+$("#cb-en").addEventListener("click",e=>{const b=e.target.closest(".en");if(!b||!C)return;const i=+b.dataset.i,en=C.enemies[i];if(en.hp<=0)return;
+  if((C.sel===i||C.enemies.filter(x=>x.hp>0).length===1)&&en.tags.length)toast(`${en.n} : ${en.tags.map(t=>tagTxt(t).toLowerCase()).join(" · ")}`);C.sel=i;updCombat();});
+let lpT=null,lpFired=false;
+$("#cb-skills").addEventListener("pointerdown",e=>{const b=e.target.closest("[data-sk]");if(!b)return;lpFired=false;clearTimeout(lpT);lpT=setTimeout(()=>{lpFired=true;const k=SKILLS[b.dataset.sk];toast(`${k.ic} ${k.n} : ${k.d} Recharge : ${k.cd} tours.`);},450);});
+["pointerup","pointerleave","pointercancel"].forEach(ev=>$("#cb-skills").addEventListener(ev,()=>clearTimeout(lpT)));
+$("#cb-skills").addEventListener("contextmenu",e=>e.preventDefault());
 $("#a-atk").addEventListener("click",()=>round("attack"));
-$("#cb-skills").addEventListener("click",e=>{const b=e.target.closest("[data-sk]");if(b&&!b.disabled)round("skill",b.dataset.sk);});
+$("#cb-skills").addEventListener("click",e=>{if(lpFired){lpFired=false;return;}const b=e.target.closest("[data-sk]");if(b&&!b.disabled)round("skill",b.dataset.sk);});
 $("#a-pot").addEventListener("click",()=>round("potion"));
 $("#a-flee").addEventListener("click",async()=>{if(!C||C.busy)return;const ar=C.ctx.type==="arena";
   const ok=await modal(`<p>${ar?"Abandonner le combat ?":"Fuir le combat ? Tu perdras 10 % de ton or dans la panique."}</p>`,[{l:ar?"Abandonner":"Fuir",cls:"danger",v:true},{l:"Rester",v:false}]);if(ok)round("flee");});

@@ -1,5 +1,5 @@
 // Service worker : le jeu fonctionne hors ligne et se met à jour au lancement suivant.
-const CACHE = "valbrume-v1";
+const CACHE = "valbrume-v2";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./favicon-32.png"];
 
 self.addEventListener("install", e => {

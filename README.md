@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.svg" width="160" alt="Logo de La Lignée de Valbrume"></p>
+
 # La Lignée de Valbrume
 
 RPG mobile multi-générationnel, en français, jouable dans le navigateur (un seul fichier HTML, aucune dépendance à installer).
@@ -6,6 +8,7 @@ RPG mobile multi-générationnel, en français, jouable dans le navigateur (un s
 
 - En ligne : activez GitHub Pages (Settings → Pages → Branch `main`, dossier `/root`), puis ouvrez `https://<votre-pseudo>.github.io/<nom-du-dépôt>/`.
 - En local : ouvrez simplement `index.html` dans un navigateur.
+- Sur téléphone : ouvrez la page puis « Ajouter à l’écran d’accueil » pour l’installer comme une application.
 
 ## Le jeu
 
